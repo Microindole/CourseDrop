@@ -50,5 +50,5 @@ export abstract class BaseLlm {
     messages: AiMessage[],
     callbacks: LlmStreamCallbacks,
     options?: LlmChatOptions
-  ): SseConnection | void;
+  ): SseConnection;
 }

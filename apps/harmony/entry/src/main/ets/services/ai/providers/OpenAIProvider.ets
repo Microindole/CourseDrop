@@ -16,10 +16,14 @@ import type {
 
 interface OpenAIMessage {
   role: string;
-  content: string;
+  content?: string;
   name?: string;
   tool_call_id?: string;
   tool_calls?: AiToolCall[];
+}
+
+export interface OpenAIThinkingOptions {
+  type: string;
 }
 
 export interface OpenAIChatRequest {
@@ -30,7 +34,7 @@ export interface OpenAIChatRequest {
   stream?: boolean;
   tools?: object[];
   reasoning_effort?: string;
-  thinking?: object;
+  thinking?: OpenAIThinkingOptions;
 }
 
 interface OpenAIChoice {
@@ -41,7 +45,7 @@ interface OpenAIChoice {
 
 interface OpenAIChatResponse {
   model?: string;
-  choices: OpenAIChoice[];
+  choices?: OpenAIChoice[];
 }
 
 interface OpenAIHeaders {
@@ -73,11 +77,14 @@ export class OpenAIProvider extends BaseLlm {
         throw new Error(`AI HTTP ${response.responseCode}: ${String(response.result)}`);
       }
       const parsed = JSON.parse(String(response.result)) as OpenAIChatResponse;
-      const choice = parsed.choices.length > 0 ? parsed.choices[0] : undefined;
+      const choices = parsed.choices !== undefined ? parsed.choices : [];
+      const choice = choices.length > 0 ? choices[0] : undefined;
+      const fallbackMessage: OpenAIMessage = { role: 'assistant', content: '' };
       const message = choice !== undefined && choice.message !== undefined ?
         choice.message :
-        { role: 'assistant', content: '' };
-      const result = AiMessageFactory.assistant(message.content, message.tool_calls);
+        fallbackMessage;
+      const messageContent = typeof message.content === 'string' ? message.content : '';
+      const result = AiMessageFactory.assistant(messageContent, message.tool_calls);
       result.metadata = {
         model: parsed.model,
         finishReason: choice !== undefined ? choice.finish_reason : undefined,
@@ -105,18 +112,23 @@ export class OpenAIProvider extends BaseLlm {
         if (event.data === '[DONE]') {
           return;
         }
+        if (event.data.trim().length === 0) {
+          return;
+        }
         try {
           const parsed = JSON.parse(event.data) as OpenAIChatResponse;
-          if (parsed.choices.length === 0) {
+          const choices = parsed.choices !== undefined ? parsed.choices : [];
+          if (choices.length === 0) {
             return;
           }
-          const delta = parsed.choices[0].delta;
+          const delta = choices[0].delta;
           if (delta === undefined) {
             return;
           }
-          if (delta.content !== undefined && delta.content.length > 0) {
-            fullText += delta.content;
-            callbacks.onChunk(delta.content);
+          const content = delta.content;
+          if (typeof content === 'string' && content.length > 0) {
+            fullText += content;
+            callbacks.onChunk(content);
           }
           const onToolCall = callbacks.onToolCall;
           if (delta.tool_calls !== undefined && onToolCall !== undefined) {

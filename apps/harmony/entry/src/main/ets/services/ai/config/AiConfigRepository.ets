@@ -29,7 +29,8 @@ export class PreferencesAiConfigRepository implements AiConfigRepository {
         temperature: config.temperature !== undefined ? config.temperature : defaults.temperature,
         maxTokens: config.maxTokens !== undefined ? config.maxTokens : defaults.maxTokens,
         thinkingEnabled: config.thinkingEnabled !== undefined ? config.thinkingEnabled : defaults.thinkingEnabled,
-        reasoningEffort: config.reasoningEffort !== undefined ? config.reasoningEffort : defaults.reasoningEffort
+        reasoningEffort: config.reasoningEffort !== undefined ? config.reasoningEffort : defaults.reasoningEffort,
+        autoAnalyzeFiles: config.autoAnalyzeFiles !== undefined ? config.autoAnalyzeFiles : defaults.autoAnalyzeFiles
       };
     } catch (error) {
       console.error(`[CourseDrop] load AI provider config failed: ${String(error)}`);

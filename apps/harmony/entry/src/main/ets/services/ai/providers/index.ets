@@ -11,5 +11,6 @@ export {
   OpenAIProvider
 } from './OpenAIProvider';
 export type {
-  OpenAIChatRequest
+  OpenAIChatRequest,
+  OpenAIThinkingOptions
 } from './OpenAIProvider';

@@ -33,6 +33,19 @@ export interface AiAssistantService {
   streamMessage(command: AiSendMessageCommand, callbacks: LlmStreamCallbacks): SseConnection | undefined;
 }
 
+const AI_TEXT_CHAT_SYSTEM_PROMPT: string =
+  '你是一个通用 AI 聊天助手，运行在 CourseDrop 课递 App 内。' +
+  '你的第一身份是通用助手，不是 CourseDrop 客服，也不是只能处理文件的助手。' +
+  'CourseDrop、文件投递、分享、下载、诊断和安全设置只是你可以回答的一部分主题，不是回答范围限制。' +
+  '当前没有文件、附件或文档上下文。你必须把用户消息当作普通文本问题处理。' +
+  '无论问题是否与 CourseDrop 有关，都要直接回答。' +
+  '禁止回复“请上传文件”“请提供文件”“我的核心能力是处理文件”或类似内容。' +
+  '只有当用户明确说“分析这个文件”“总结附件”“读取文档内容”，并且当前确实没有文件上下文时，才可以说明需要先选择文件。' +
+  '回答要自然、简洁、具体。';
+
+const AI_FILE_CONTEXT_SYSTEM_PROMPT: string =
+  '你是 CourseDrop 课递 App 内置的文件与文本助手。当前包含文件上下文时，可以基于文件内容分析；没有文件上下文时，直接按普通文本问题回答。';
+
 export class DefaultAiAssistantService implements AiAssistantService {
   private configRepository: AiConfigRepository;
   private memoryRepository: AiMemoryRepository;
@@ -52,7 +65,7 @@ export class DefaultAiAssistantService implements AiAssistantService {
   }
 
   createConversation(systemPrompt?: string, title?: string): AiConversation {
-    const prompt = systemPrompt !== undefined ? systemPrompt : '你是 CourseDrop 的文件投递与文档分析助手。';
+    const prompt = systemPrompt !== undefined ? systemPrompt : AI_TEXT_CHAT_SYSTEM_PROMPT;
     const conversation = AiConversationFactory.create(prompt, title);
     this.memoryRepository.save(conversation);
     return conversation;
@@ -65,7 +78,7 @@ export class DefaultAiAssistantService implements AiAssistantService {
     }
     const conversation = this.loadOrCreate(command.conversationId);
     const fileContexts = this.parseFileContexts(command.files);
-    const memory = this.createMemory(conversation);
+    const memory = this.createMemory(conversation, fileContexts.length > 0);
     memory.addUserMessage(command.content);
 
     const provider = this.providerFactory.create(providerConfig);
@@ -91,7 +104,7 @@ export class DefaultAiAssistantService implements AiAssistantService {
       }
       const conversation = this.loadOrCreate(command.conversationId);
       const fileContexts = this.parseFileContexts(command.files);
-      const memory = this.createMemory(conversation);
+      const memory = this.createMemory(conversation, fileContexts.length > 0);
       memory.addUserMessage(command.content);
       let assistantText = '';
 
@@ -129,11 +142,13 @@ export class DefaultAiAssistantService implements AiAssistantService {
     return this.createConversation();
   }
 
-  private createMemory(conversation: AiConversation): ChatMemory {
+  private createMemory(conversation: AiConversation, hasFileContext: boolean): ChatMemory {
     const limits = this.configRepository.getRuntimeLimits();
-    const memory = new ChatMemory(conversation.systemPrompt, limits.maxHistoryMessages);
+    const systemPrompt = hasFileContext ? AI_FILE_CONTEXT_SYSTEM_PROMPT : AI_TEXT_CHAT_SYSTEM_PROMPT;
+    conversation.systemPrompt = systemPrompt;
+    const memory = new ChatMemory(systemPrompt, limits.maxHistoryMessages);
     memory.restore({
-      systemPrompt: conversation.systemPrompt,
+      systemPrompt: systemPrompt,
       messages: conversation.messages
     });
     return memory;

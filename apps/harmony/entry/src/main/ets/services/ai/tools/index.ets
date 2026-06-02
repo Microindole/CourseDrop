@@ -11,6 +11,9 @@ export {
   Tool
 } from './Tool';
 export type {
+  ToolParameterSchema,
+  ToolParametersProperties,
+  ToolParametersSchema,
   ToolRunContext
 } from './Tool';
 export {

@@ -12,7 +12,7 @@ export class ChatMemory {
   private maxHistoryMessages: number;
 
   constructor(systemPrompt?: string, maxHistoryMessages?: number) {
-    this.systemPrompt = systemPrompt !== undefined ? systemPrompt : '你是 CourseDrop 的文件投递与文档分析助手。';
+    this.systemPrompt = systemPrompt !== undefined ? systemPrompt : '你是 CourseDrop 课递的移动端 AI 助手。没有文件上下文时，直接按普通文本问题回答。';
     this.maxHistoryMessages = maxHistoryMessages !== undefined ? maxHistoryMessages : 20;
   }
 

@@ -18,6 +18,7 @@ export interface AiProviderConfig {
   maxTokens: number;
   thinkingEnabled: boolean;
   reasoningEffort: DeepSeekReasoningEffort;
+  autoAnalyzeFiles: boolean;
 }
 
 export class DefaultAiProviderConfig {
@@ -31,7 +32,8 @@ export class DefaultAiProviderConfig {
       temperature: 0.3,
       maxTokens: 2048,
       thinkingEnabled: false,
-      reasoningEffort: 'medium'
+      reasoningEffort: 'medium',
+      autoAnalyzeFiles: false
     };
   }
 }

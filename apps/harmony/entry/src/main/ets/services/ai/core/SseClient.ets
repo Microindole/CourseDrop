@@ -243,8 +243,11 @@ export class SseClient {
   }
 
   private toError(error: Error | Object): Error {
-    if (typeof error === 'object' && error !== null && 'message' in error) {
-      return new Error(String((error as Error).message));
+    if (typeof error === 'object' && error !== null) {
+      const possibleError = error as Error;
+      if (possibleError.message !== undefined) {
+        return new Error(String(possibleError.message));
+      }
     }
     return new Error(String(error));
   }

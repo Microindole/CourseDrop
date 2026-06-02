@@ -1,19 +1,22 @@
 import type { LocalFileIndexRepository } from '../../local';
 import { Tool } from './Tool';
-import type { ToolRunContext } from './Tool';
+import type { ToolParameterSchema, ToolParametersProperties, ToolParametersSchema, ToolRunContext } from './Tool';
+
+interface LocalFileToolItem {
+  id: string;
+  displayName: string;
+  type: string;
+  contentType: string;
+  sizeBytes: number;
+  encrypted: boolean;
+  remoteCached: boolean;
+  shareCount: number;
+}
 
 export class GetLocalFilesTool extends Tool {
   name: string = 'get_local_files';
   description: string = '读取 CourseDrop 本地库文件列表，只返回元数据，不读取文件正文。';
-  parametersSchema: object = {
-    type: 'object',
-    properties: {
-      limit: {
-        type: 'number',
-        description: '最多返回多少个文件，默认 20。'
-      }
-    }
-  };
+  parametersSchema: ToolParametersSchema = this.createParametersSchema();
 
   private repository: LocalFileIndexRepository;
 
@@ -32,7 +35,7 @@ export class GetLocalFilesTool extends Tool {
     } catch (_error) {
     }
     const files = this.repository.list().slice(0, limit).map((file) => {
-      return {
+      const item: LocalFileToolItem = {
         id: file.id,
         displayName: file.displayName,
         type: file.type,
@@ -42,8 +45,23 @@ export class GetLocalFilesTool extends Tool {
         remoteCached: file.remoteCached,
         shareCount: file.shareCount
       };
+      return item;
     });
     return JSON.stringify(files);
+  }
+
+  private createParametersSchema(): ToolParametersSchema {
+    const limitSchema: ToolParameterSchema = {
+      type: 'number',
+      description: '最多返回多少个文件，默认 20。'
+    };
+    const properties: ToolParametersProperties = {
+      limit: limitSchema
+    };
+    return {
+      type: 'object',
+      properties: properties
+    };
   }
 }
 

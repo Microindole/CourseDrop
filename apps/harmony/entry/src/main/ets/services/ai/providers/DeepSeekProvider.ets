@@ -1,6 +1,7 @@
 import type { DeepSeekReasoningEffort } from '../config';
 import type { LlmChatOptions, LlmProviderConfig } from '../core';
-import { OpenAIChatRequest, OpenAIProvider } from './OpenAIProvider';
+import { OpenAIProvider } from './OpenAIProvider';
+import type { OpenAIChatRequest, OpenAIThinkingOptions } from './OpenAIProvider';
 
 export interface DeepSeekProviderConfig extends LlmProviderConfig {
   thinkingEnabled: boolean;
@@ -22,8 +23,9 @@ export class DeepSeekProvider extends OpenAIProvider {
       return;
     }
     request.reasoning_effort = this.reasoningEffort;
-    request.thinking = {
+    const thinking: OpenAIThinkingOptions = {
       type: 'enabled'
     };
+    request.thinking = thinking;
   }
 }
