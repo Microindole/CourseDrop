@@ -17,7 +17,7 @@ coursedrop:
     secure-cookie: false
     cors-allowed-origins: "*"
   storage:
-    upload-dir: ${COURSEDROP_UPLOAD_DIR:${user.home}/gxy}
+    upload-dir: ${COURSEDROP_STORAGE_UPLOAD_DIR:uploads}
     room-ttl-hours: 24
     file-ttl-hours: 168
     max-file-size-mb: 100

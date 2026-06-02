@@ -1,3 +1,5 @@
+export { AiChatViewModel } from './AiChatViewModel';
+export type { AiChatConfigForm, AiChatMessage, AiChatRole } from './AiChatViewModel';
 export { DeviceViewModel } from './DeviceViewModel';
 export { HomeViewModel } from './HomeViewModel';
 export type { HomeTransferStats } from './HomeViewModel';

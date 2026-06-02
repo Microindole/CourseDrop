@@ -16,6 +16,7 @@ export { CdSwitchRow } from './common/CdSwitchRow';
 export { CdSelectField } from './common/CdSelectField';
 
 // 模块化业务组件 (business)
+export { AiMarkdownText } from './business/AiMarkdownText';
 export { CdLocalFileCard } from './business/CdLocalFileCard';
 export { CdLocalLibraryActions } from './business/CdLocalLibraryActions';
 export { CdLocalFileDetailDrawer } from './business/CdLocalFileDetailDrawer';
@@ -28,4 +29,3 @@ export { CdLanDeviceList } from './business/CdLanDeviceList';
 export { CdHomeGuideStep } from './business/CdHomeGuideStep';
 export { CdHomeRecentShares } from './business/CdHomeRecentShares';
 export { CdTransferStats } from './business/CdTransferStats';
-
