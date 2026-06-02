@@ -190,7 +190,7 @@ export class ShareViewModel {
       await transferService.uploadLocalFile({
         shareId: this.currentSession.id,
         localFileId: itemId,
-        encrypted: settingsService.getSettings().e2eeEnabled,
+        encrypted: this.shouldEncryptUpload(),
         onUploaded: (
           remoteItemId: string,
           remoteUrl: string,
@@ -220,9 +220,9 @@ export class ShareViewModel {
       const item = this.currentSession.items[index];
       if (item.remoteItemId === undefined || item.remoteItemId.length === 0) {
         const task = await transferService.uploadLocalFile({
-          shareId: this.currentSession.id,
-          localFileId: item.id,
-          encrypted: settingsService.getSettings().e2eeEnabled,
+            shareId: this.currentSession.id,
+            localFileId: item.id,
+            encrypted: this.shouldEncryptUpload(),
           onUploaded: (
             remoteItemId: string,
             remoteUrl: string,
@@ -258,5 +258,12 @@ export class ShareViewModel {
     const nextUrl = `${baseUrl}#cdkey=${fragment}`;
     shareService.updateShareUrl(this.currentSession.id, nextUrl);
     this.currentSession = shareService.getCurrentSession();
+  }
+
+  private shouldEncryptUpload(): boolean {
+    if (settingsService.getSettings().e2eeEnabled) {
+      return true;
+    }
+    return this.currentSession.downloadPolicy !== 'PUBLIC';
   }
 }

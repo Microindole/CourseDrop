@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.coursedrop.server.mapper.ShareItemRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -29,6 +30,9 @@ class ShareFlowTests {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private ShareItemRepository shareItemRepository;
 
     @Test
     void homePageRendersServerEntry() throws Exception {
@@ -149,6 +153,34 @@ class ShareFlowTests {
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("google邮箱.txt")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("download-link")));
+    }
+
+    @Test
+    void uploadedStorageKeyDoesNotExposeOriginalFilename() throws Exception {
+        var createResult = mockMvc.perform(post("/api/shares")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "expireHours": 1,
+                          "downloadPolicy": "PUBLIC",
+                          "ownerIdentityType": "ANONYMOUS"
+                        }
+                        """))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode share = objectMapper.readTree(createResult.getResponse().getContentAsString());
+        var shareId = share.get("id").asText();
+
+        var file = new MockMultipartFile("file", "private-course-plan.txt", "text/plain", "secret".getBytes());
+        var uploadResult = mockMvc.perform(multipart("/api/shares/{shareId}/items", shareId).file(file))
+                .andExpect(status().isOk())
+                .andReturn();
+        var itemId = objectMapper.readTree(uploadResult.getResponse().getContentAsString()).get("id").asText();
+
+        var item = shareItemRepository.findById(itemId).orElseThrow();
+        assertThat(item.storageKey()).doesNotContain("private-course-plan");
+        assertThat(item.storageKey()).doesNotContain(".txt");
+        assertThat(item.storageKey()).contains("/");
     }
 
     @Test

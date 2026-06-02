@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,11 +25,12 @@ public class LocalFileStorageService {
     public StoredObject store(MultipartFile file) {
         try {
             Files.createDirectories(uploadRoot);
-            var safeName = FileNameCleaner.clean(file.getOriginalFilename());
-            var storageKey = safeName.isBlank()
-                    ? UUID.randomUUID().toString()
-                    : UUID.randomUUID() + "-" + safeName;
+            var storageKey = nextStorageKey();
             var target = uploadRoot.resolve(storageKey).normalize();
+            if (!target.startsWith(uploadRoot)) {
+                throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid storage path");
+            }
+            Files.createDirectories(target.getParent());
             file.transferTo(target);
             return new StoredObject(storageKey, target, Files.size(target));
         } catch (IOException exception) {
@@ -46,7 +48,7 @@ public class LocalFileStorageService {
 
     public void deleteIfExists(String storageKey) {
         try {
-            Files.deleteIfExists(uploadRoot.resolve(storageKey).normalize());
+            deletePath(storageKey);
         } catch (IOException ignored) {
             // Cleanup should be best-effort; metadata cleanup can still continue.
         }
@@ -54,7 +56,7 @@ public class LocalFileStorageService {
 
     public boolean deleteIfExistsWithResult(String storageKey) {
         try {
-            return Files.deleteIfExists(uploadRoot.resolve(storageKey).normalize());
+            return deletePath(storageKey);
         } catch (IOException exception) {
             return false;
         }
@@ -65,14 +67,42 @@ public class LocalFileStorageService {
             if (!Files.exists(uploadRoot)) {
                 return List.of();
             }
-            try (var stream = Files.list(uploadRoot)) {
+            try (Stream<Path> stream = Files.walk(uploadRoot)) {
                 return stream
                         .filter(Files::isRegularFile)
-                        .map(path -> path.getFileName().toString())
+                        .map(path -> uploadRoot.relativize(path).toString().replace('\\', '/'))
                         .toList();
             }
         } catch (IOException exception) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to list stored files");
+        }
+    }
+
+    private String nextStorageKey() {
+        var id = UUID.randomUUID().toString().replace("-", "");
+        return id.substring(0, 2) + "/" + id.substring(2, 4) + "/" + id + ".bin";
+    }
+
+    private boolean deletePath(String storageKey) throws IOException {
+        var path = uploadRoot.resolve(storageKey).normalize();
+        if (!path.startsWith(uploadRoot)) {
+            return false;
+        }
+        var deleted = Files.deleteIfExists(path);
+        deleteEmptyParentDirectories(path.getParent());
+        return deleted;
+    }
+
+    private void deleteEmptyParentDirectories(Path directory) throws IOException {
+        var current = directory;
+        while (current != null && current.startsWith(uploadRoot) && !current.equals(uploadRoot)) {
+            try (var stream = Files.list(current)) {
+                if (stream.findAny().isPresent()) {
+                    return;
+                }
+            }
+            Files.deleteIfExists(current);
+            current = current.getParent();
         }
     }
 }

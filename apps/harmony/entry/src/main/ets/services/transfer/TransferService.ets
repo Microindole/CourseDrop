@@ -75,7 +75,7 @@ export class DefaultTransferService implements TransferService {
       let e2eeAuthTag = '';
       let sha256 = '';
       let plainSizeBytes = file.sizeBytes;
-      const shouldEncrypt = command.encrypted && file.contentType !== 'text/plain' && file.type !== 'TEXT';
+      const shouldEncrypt = command.encrypted;
       if (shouldEncrypt) {
         const result = await encryptionService.encryptFile({
           sourceUri: file.localUri,
