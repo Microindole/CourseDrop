@@ -1,5 +1,6 @@
 import router from '@ohos.router';
 import { AppColors, AppRadius, AppSpacing, AppTypography } from '../common/Theme';
+import { AiMarkdownText } from '../components/index';
 import { AiChatViewModel } from '../viewmodels';
 import type { AiChatMessage } from '../viewmodels';
 
@@ -132,19 +133,20 @@ struct AiChatPage {
           .layoutWeight(1)
       }
 
-      Text(message.content.length > 0 ? message.content : '正在生成...')
-        .fontSize(15)
-        .fontColor(message.role === 'user' ? AppColors.SURFACE : AppColors.TEXT)
-        .lineHeight(23)
+      AiMarkdownText({
+        content: message.content.length > 0 ? message.content : '正在生成...',
+        isUser: false
+      })
         .padding({
-          left: 14,
-          right: 14,
-          top: 10,
-          bottom: 10
+          left: message.role === 'user' ? 16 : 0,
+          right: message.role === 'user' ? 16 : 0,
+          top: message.role === 'user' ? 10 : 0,
+          bottom: message.role === 'user' ? 10 : 0
         })
-        .backgroundColor(message.role === 'user' ? '#111827' : '#00000000')
-        .borderRadius(18)
-        .constraintSize({ maxWidth: '82%' })
+        .backgroundColor(message.role === 'user' ? '#F1F2F4' : '#00000000')
+        .borderRadius(message.role === 'user' ? 20 : 0)
+        .width(message.role === 'user' && message.content.length > 18 ? '76%' : 'auto')
+        .constraintSize({ maxWidth: message.role === 'user' ? '76%' : '92%' })
 
       if (message.role === 'assistant') {
         Blank()
@@ -152,6 +154,10 @@ struct AiChatPage {
       }
     }
     .width('100%')
+    .padding({
+      left: message.role === 'assistant' ? 0 : 40,
+      right: message.role === 'user' ? 0 : 18
+    })
   }
 
   @Builder
