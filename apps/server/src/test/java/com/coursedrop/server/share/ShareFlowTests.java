@@ -369,6 +369,19 @@ class ShareFlowTests {
     }
 
     @Test
+    void qrPngEndpointRendersImage() throws Exception {
+        mockMvc.perform(get("/api/qr.png")
+                .param("text", "https://coursedrop.example/s/ABCDEFGH"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.IMAGE_PNG));
+
+        mockMvc.perform(get("/api/qr/png")
+                .param("text", "https://coursedrop.example/s/ABCDEFGH"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.IMAGE_PNG));
+    }
+
+    @Test
     void accountSecurityAndDeviceBindingCanBeManaged() throws Exception {
         var suffix = Long.toString(System.nanoTime());
         var primaryFingerprint = "test-device-account-primary-" + suffix;

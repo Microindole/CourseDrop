@@ -4,6 +4,7 @@ import { TransferItem } from '../models/TransferItem';
 import { TransferTask } from '../models/TransferTask';
 import { shareService } from '../services/share';
 import { shareDraftWorkflow } from '../services/share';
+import { shareQrImageService } from '../services/share';
 import { transferService } from '../services/transfer';
 import { apiClient } from '../services/ApiClient';
 import { clipboardService } from '../services/clipboard';
@@ -84,7 +85,11 @@ export class ShareViewModel {
     if (this.currentSession.shareUrl.length === 0 || !apiClient.hasBaseUrl()) {
       return '';
     }
-    return `${apiClient.getBaseUrl()}/api/qr.png?text=${encodeURIComponent(this.currentSession.shareUrl)}`;
+    return `${apiClient.getBaseUrl()}/api/qr/png?text=${encodeURIComponent(this.currentSession.shareUrl)}`;
+  }
+
+  async loadShareQrImage(): Promise<string> {
+    return await shareQrImageService.loadQrImage(this.currentSession.shareUrl);
   }
 
   async refreshShareCode(): Promise<void> {

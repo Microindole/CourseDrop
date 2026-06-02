@@ -26,6 +26,7 @@ export default struct SharePage {
   @State tasks: TransferTask[] = [];
   @State lastActionText: string = '分享内容由 CourseDrop 中转源托管';
   @State errorMessage: string = '';
+  @State qrImageUrl: string = '';
   @State loading: boolean = false;
   @State refreshing: boolean = false;
 
@@ -57,6 +58,22 @@ export default struct SharePage {
     this.lastActionText = this.viewModel.lastActionText.length > 0 ? this.viewModel.lastActionText : '分享内容由 CourseDrop 中转源托管';
     this.errorMessage = this.viewModel.errorMessage;
     this.loading = this.viewModel.loading;
+    this.loadQrImage();
+  }
+
+  private loadQrImage(): void {
+    if (this.currentSession.shareUrl.length === 0) {
+      this.qrImageUrl = '';
+      return;
+    }
+    this.viewModel.loadShareQrImage()
+      .then((localUri: string) => {
+        this.qrImageUrl = localUri;
+      })
+      .catch((error: Error) => {
+        this.qrImageUrl = '';
+        this.errorMessage = `二维码加载失败：${String(error)}；${this.viewModel.getShareQrImageUrl()}`;
+      });
   }
 
   private copyItem(item: TransferItem): TransferItem {
@@ -111,7 +128,8 @@ export default struct SharePage {
           currentSession: $currentSession,
           loading: this.loading,
           expireText: this.viewModel.getExpireText(),
-          qrImageUrl: this.viewModel.getShareQrImageUrl(),
+          qrImageUrl: this.qrImageUrl,
+          qrFallbackText: this.viewModel.getShareQrImageUrl(),
           errorMessage: this.errorMessage,
           onReturn: () => {
             this.loading = true;

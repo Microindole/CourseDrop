@@ -12,7 +12,6 @@ import com.coursedrop.server.common.ApiException;
 import com.coursedrop.server.service.QrCodeService;
 
 @RestController
-@RequestMapping("/api/qr")
 public class QrController {
     private final QrCodeService qrCodeService;
 
@@ -20,7 +19,7 @@ public class QrController {
         this.qrCodeService = qrCodeService;
     }
 
-    @GetMapping(produces = "image/svg+xml")
+    @GetMapping(path = "/api/qr", produces = "image/svg+xml")
     public String render(@RequestParam String text) {
         if (text == null || text.isBlank()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "QR text is required");
@@ -31,12 +30,12 @@ public class QrController {
         return qrCodeService.renderSvg(text);
     }
 
-    @GetMapping(path = ".png", produces = MediaType.IMAGE_PNG_VALUE)
+    @GetMapping(path = { "/api/qr.png", "/api/qr/png" }, produces = MediaType.IMAGE_PNG_VALUE)
     public ResponseEntity<byte[]> renderPng(@RequestParam String text) {
         if (text == null || text.isBlank()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "QR text is required");
         }
-        if (text.length() > 1024) {
+        if (text.length() > 4096) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "QR text is too long");
         }
         return ResponseEntity.ok()

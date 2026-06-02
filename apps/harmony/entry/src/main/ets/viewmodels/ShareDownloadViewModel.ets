@@ -42,11 +42,15 @@ export class ShareDownloadViewModel {
     }
     this.loading = true;
     try {
-      const identity = identityService.getLocalIdentity();
+      let identity = identityService.getLocalIdentity();
+      if (identity === undefined || identity.fingerprintId.length === 0) {
+        identity = await identityService.registerCurrentDevice();
+      }
       const task = await transferService.downloadShareItem({
         code: this.code,
         itemId: item.id,
         fingerprintId: identity === undefined ? undefined : identity.fingerprintId,
+        accountId: identity === undefined || identity.accountId.length === 0 ? undefined : identity.accountId,
         e2eeKeyMaterial: this.findKey(item.id).keyMaterial,
         e2eeNonce: this.findKey(item.id).nonce,
         e2eeAuthTag: this.findKey(item.id).authTag

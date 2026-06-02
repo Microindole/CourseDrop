@@ -9,6 +9,7 @@ export struct CdShareControlCenter {
   @Prop loading: boolean = false;
   @Prop expireText: string = '';
   @Prop qrImageUrl: string = '';
+  @Prop qrFallbackText: string = '';
   @Prop errorMessage: string = '';
   onReturn: () => void = () => {};
   onExtend: () => void = () => {};
@@ -103,11 +104,11 @@ export struct CdShareControlCenter {
                 .height(160)
                 .objectFit(ImageFit.Contain)
             } else {
-              Text(this.currentSession.shareUrl)
+              Text(this.qrFallbackText.length > 0 ? this.qrFallbackText : this.currentSession.shareUrl)
                 .fontSize(AppTypography.CAPTION)
                 .fontColor(AppColors.TEXT_SECONDARY)
                 .textAlign(TextAlign.Center)
-                .maxLines(3)
+                .maxLines(5)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
             }
           }

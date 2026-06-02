@@ -10,6 +10,7 @@ import {
   CdTopBar
 } from '../components/index';
 import { RelayShareItemResponse } from '../services/share';
+import { cameraScanService, qrPayloadParser } from '../services/scan';
 import { ShareDownloadViewModel } from '../viewmodels/ShareDownloadViewModel';
 
 interface ShareDownloadParams {
@@ -38,6 +39,25 @@ struct ShareDownloadPage {
   private async loadShare(): Promise<void> {
     await this.viewModel.load(this.code);
     this.refreshView();
+  }
+
+  private async scanShare(): Promise<void> {
+    const result = await cameraScanService.openCamera();
+    if (!result.success || result.rawText.length === 0) {
+      this.viewModel.lastActionText = result.message;
+      this.viewModel.errorMessage = result.success ? '' : result.message;
+      this.refreshView();
+      return;
+    }
+    const payload = qrPayloadParser.parse(result.rawText);
+    if (payload.type !== 'SHARE') {
+      this.viewModel.lastActionText = '未识别到分享二维码';
+      this.viewModel.errorMessage = '请扫描 CourseDrop 分享二维码，或手动输入提取码。';
+      this.refreshView();
+      return;
+    }
+    this.code = payload.rawText;
+    await this.loadShare();
   }
 
   private formatSize(sizeBytes: number): string {
@@ -133,6 +153,15 @@ struct ShareDownloadPage {
               interactive: !this.viewModel.loading,
               onTap: () => {
                 this.loadShare();
+              }
+            })
+
+            CdButton({
+              label: '扫码识别分享',
+              variant: 'tonal',
+              interactive: !this.viewModel.loading,
+              onTap: () => {
+                this.scanShare();
               }
             })
           }
