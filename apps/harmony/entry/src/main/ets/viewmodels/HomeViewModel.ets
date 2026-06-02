@@ -15,7 +15,7 @@ export interface HomeTransferStats {
 export class HomeViewModel {
   appName: string = AppConfig.APP_NAME;
   subtitle: string = '本地优先的加密文件传输与分享管理';
-  recentShares: ShareSession[] = shareService.listRecentSessions(2);
+  recentShares: ShareSession[] = shareService.listRecentSessions(5);
   nearbyDevices: Device[] = deviceDiscoveryService.listDevices().slice(0, 2);
   activeTasks: TransferTask[] = shareService.listTasks(shareService.getCurrentSession().id)
     .filter((task) => task.status === 'RUNNING');

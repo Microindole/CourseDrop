@@ -35,6 +35,7 @@ export default struct SharePage {
 
   private syncState() {
     const session = this.viewModel.currentSession;
+    const items = session.items.map((item: TransferItem) => this.copyItem(item));
     this.currentSession = {
       id: session.id,
       title: session.title,
@@ -49,13 +50,31 @@ export default struct SharePage {
       totalSizeBytes: session.totalSizeBytes,
       encrypted: session.encrypted,
       downloadPolicy: session.downloadPolicy,
-      items: session.items.slice()
+      items: items
     };
-    this.draftItems = session.items.slice();
+    this.draftItems = items.map((item: TransferItem) => this.copyItem(item));
     this.tasks = this.viewModel.getTasks();
     this.lastActionText = this.viewModel.lastActionText.length > 0 ? this.viewModel.lastActionText : '分享内容由 CourseDrop 中转源托管';
     this.errorMessage = this.viewModel.errorMessage;
     this.loading = this.viewModel.loading;
+  }
+
+  private copyItem(item: TransferItem): TransferItem {
+    return {
+      id: item.id,
+      roomId: item.roomId,
+      sessionId: item.sessionId,
+      type: item.type,
+      displayName: item.displayName,
+      contentType: item.contentType,
+      sizeBytes: item.sizeBytes,
+      localUri: item.localUri,
+      remoteUrl: item.remoteUrl,
+      remoteItemId: item.remoteItemId,
+      createdAt: item.createdAt,
+      expiresAt: item.expiresAt,
+      encrypted: item.encrypted
+    };
   }
 
   build() {

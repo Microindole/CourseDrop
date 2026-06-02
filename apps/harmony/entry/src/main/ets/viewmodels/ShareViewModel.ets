@@ -84,7 +84,7 @@ export class ShareViewModel {
     if (this.currentSession.shareUrl.length === 0 || !apiClient.hasBaseUrl()) {
       return '';
     }
-    return `${apiClient.getBaseUrl()}/api/qr?text=${encodeURIComponent(this.currentSession.shareUrl)}`;
+    return `${apiClient.getBaseUrl()}/api/qr.png?text=${encodeURIComponent(this.currentSession.shareUrl)}`;
   }
 
   async refreshShareCode(): Promise<void> {

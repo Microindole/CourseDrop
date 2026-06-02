@@ -10,6 +10,7 @@ export struct CdBottomTabs {
   @BuilderParam libraryContent: () => void = this.defaultContent;
   @BuilderParam deviceContent: () => void = this.defaultContent;
   @BuilderParam settingsContent: () => void = this.defaultContent;
+  onTabChange: (index: number) => void = (_index: number) => {};
 
   @Builder
   defaultContent() {}
@@ -68,6 +69,7 @@ export struct CdBottomTabs {
     .onClick(() => {
       this.currentIndex = index;
       this.tabsController.changeIndex(index);
+      this.onTabChange(index);
     })
   }
 
@@ -109,6 +111,7 @@ export struct CdBottomTabs {
       .scrollable(false) // 禁用滑动切换，防止与底栏状态脱节
       .onChange((index: number) => {
         this.currentIndex = index;
+        this.onTabChange(index);
       })
 
       // 自定义高质感占位底部导航栏

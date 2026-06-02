@@ -29,8 +29,12 @@ export class LocalShareService implements ShareService {
   }
 
   listRecentSessions(limit: number): ShareSession[] {
+    const now = Date.now();
     return this.sessionRepository.list()
-      .filter((session) => session.status !== 'DRAFT')
+      .filter((session: ShareSession) => session.status === 'ACTIVE')
+      .filter((session: ShareSession) => session.code.length > 0)
+      .filter((session: ShareSession) => session.expiresAt.length === 0 || Date.parse(session.expiresAt) > now)
+      .sort((left: ShareSession, right: ShareSession) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
       .slice(0, limit);
   }
 

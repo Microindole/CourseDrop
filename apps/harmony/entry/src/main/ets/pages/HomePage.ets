@@ -150,6 +150,11 @@ struct HomePage {
     Stack({ alignContent: Alignment.TopStart }) {
       CdBottomTabs({
         currentIndex: $currentIndex,
+        onTabChange: (index: number) => {
+          if (index === 0) {
+            this.syncHomeData();
+          }
+        },
         homeContent: () => {
           this.HomeTab();
         },
