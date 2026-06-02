@@ -11,7 +11,7 @@ export { CourseDropFileImportService } from './FileImportService';
 export type { FilePickerService } from './FilePickerService';
 export { SystemFilePickerService } from './FilePickerService';
 export { FileTypeResolver } from './FileTypeResolver';
-export type { CreatedTextFile, FileMetadata } from './FileSystemService';
+export type { CopiedFile, CreatedTextFile, FileMetadata } from './FileSystemService';
 export { FileSystemService } from './FileSystemService';
 export type { LocalFileImportResult } from './LocalFileImportWorkflow';
 export { LocalFileImportWorkflow } from './LocalFileImportWorkflow';

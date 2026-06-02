@@ -1,5 +1,5 @@
 import cryptoFramework from '@ohos.security.cryptoFramework';
-import { fileIo, fileUri } from '@kit.CoreFileKit';
+import { fileIo } from '@kit.CoreFileKit';
 import { DecryptionPlan, DecryptionResult, EncryptionPlan, EncryptionResult } from './CryptoModels';
 
 export interface EncryptionService {
@@ -34,7 +34,7 @@ export class CourseDropEncryptionService implements EncryptionService {
       this.writeFile(encryptedPath, this.toArrayBuffer(output.data));
 
       return {
-        encryptedUri: fileUri.getUriFromPath(encryptedPath),
+        encryptedUri: encryptedPath,
         algorithm: 'AES-256-GCM',
         kdfAlgorithm: 'NONE-RAW-KEY',
         kdfSalt: '',
@@ -73,7 +73,7 @@ export class CourseDropEncryptionService implements EncryptionService {
       const targetPath = `${plan.targetDirectory.replace(/\/$/, '')}/decrypted-${encryptedName}`;
       this.writeFile(targetPath, this.toArrayBuffer(output.data));
       return {
-        plainUri: fileUri.getUriFromPath(targetPath),
+        plainUri: targetPath,
         plainSizeBytes: output.data.byteLength
       };
     } catch (error) {
@@ -82,9 +82,10 @@ export class CourseDropEncryptionService implements EncryptionService {
   }
 
   private readFile(uri: string): Uint8Array {
-    const file = fileIo.openSync(uri, fileIo.OpenMode.READ_ONLY);
+    const path = this.uriToPath(uri);
+    const file = fileIo.openSync(path, fileIo.OpenMode.READ_ONLY);
     try {
-      const stat = fileIo.statSync(file.fd);
+      const stat = fileIo.statSync(path);
       const buffer = new ArrayBuffer(stat.size);
       fileIo.readSync(file.fd, buffer);
       return new Uint8Array(buffer);
@@ -111,7 +112,10 @@ export class CourseDropEncryptionService implements EncryptionService {
   }
 
   private uriToPath(uri: string): string {
-    return uri.replace(/^file:\/\//, '');
+    if (!uri.startsWith('file://')) {
+      return uri;
+    }
+    return decodeURIComponent(uri.replace(/^file:\/\//, ''));
   }
 
   private fileNameFromUri(uri: string): string {

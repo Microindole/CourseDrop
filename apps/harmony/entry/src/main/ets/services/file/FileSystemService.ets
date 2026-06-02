@@ -11,10 +11,16 @@ export interface CreatedTextFile {
   sizeBytes: number;
 }
 
+export interface CopiedFile {
+  path: string;
+  uri: string;
+  sizeBytes: number;
+}
+
 export class FileSystemService {
   stat(uri: string, fallbackContentType: string): FileMetadata {
     try {
-      const stat = fileIo.statSync(uri);
+      const stat = fileIo.statSync(this.toLocalPath(uri));
       return {
         sizeBytes: stat.size,
         contentType: fallbackContentType
@@ -58,28 +64,26 @@ export class FileSystemService {
     }
   }
 
-  copyToDirectory(sourceUri: string, targetDirectory: string, displayName: string): string {
+  copyToDirectory(sourceUri: string, targetDirectory: string, displayName: string): CopiedFile {
     this.ensureDirectory(targetDirectory);
     const targetPath = `${targetDirectory}/${Date.now()}-${this.sanitizeFileName(displayName)}`;
-    const sourceFile = fileIo.openSync(sourceUri, fileIo.OpenMode.READ_ONLY);
+    const sourceFile = this.openReadOnly(sourceUri);
     const targetFile = fileIo.openSync(targetPath, fileIo.OpenMode.CREATE | fileIo.OpenMode.READ_WRITE);
     try {
-      const bufferSize = 1024 * 256;
-      const buffer = new ArrayBuffer(bufferSize);
-      let readSize = fileIo.readSync(sourceFile.fd, buffer);
-      while (readSize > 0) {
-        if (readSize === bufferSize) {
-          fileIo.writeSync(targetFile.fd, buffer);
-        } else {
-          fileIo.writeSync(targetFile.fd, buffer.slice(0, readSize));
-        }
-        readSize = fileIo.readSync(sourceFile.fd, buffer);
-      }
+      this.copyOpenedFile(sourceFile.fd, targetFile.fd);
     } finally {
       fileIo.closeSync(sourceFile.fd);
       fileIo.closeSync(targetFile.fd);
     }
-    return fileUri.getUriFromPath(targetPath);
+    const targetStat = fileIo.statSync(targetPath);
+    if (targetStat.size <= 0) {
+      throw new Error(`文件复制失败：${displayName} 为空或无法读取`);
+    }
+    return {
+      path: targetPath,
+      uri: fileUri.getUriFromPath(targetPath),
+      sizeBytes: targetStat.size
+    };
   }
 
   writeTextFile(targetDirectory: string, displayName: string, content: string): CreatedTextFile {
@@ -103,8 +107,12 @@ export class FileSystemService {
   }
 
   readAll(uri: string): ArrayBuffer {
-    const stat = fileIo.statSync(uri);
-    const file = fileIo.openSync(uri, fileIo.OpenMode.READ_ONLY);
+    const path = this.toLocalPath(uri);
+    const stat = fileIo.statSync(path);
+    if (stat.size <= 0) {
+      throw new Error(`文件为空或无法读取：${path}`);
+    }
+    const file = fileIo.openSync(path, fileIo.OpenMode.READ_ONLY);
     try {
       const buffer = new ArrayBuffer(stat.size);
       fileIo.readSync(file.fd, buffer);
@@ -119,6 +127,39 @@ export class FileSystemService {
       .replace(/\//g, '_')
       .replace(/\\/g, '_')
       .replace(/:/g, '_');
+  }
+
+  private toLocalPath(uri: string): string {
+    if (!uri.startsWith('file://')) {
+      return uri;
+    }
+    return decodeURIComponent(uri.replace(/^file:\/\//, ''));
+  }
+
+  private openReadOnly(uri: string): fileIo.File {
+    try {
+      return fileIo.openSync(uri, fileIo.OpenMode.READ_ONLY);
+    } catch (_error) {
+      return fileIo.openSync(this.toLocalPath(uri), fileIo.OpenMode.READ_ONLY);
+    }
+  }
+
+  private copyOpenedFile(sourceFd: number, targetFd: number): void {
+    try {
+      fileIo.copyFileSync(sourceFd, targetFd);
+    } catch (_error) {
+      const bufferSize = 1024 * 256;
+      const buffer = new ArrayBuffer(bufferSize);
+      let readSize = fileIo.readSync(sourceFd, buffer);
+      while (readSize > 0) {
+        if (readSize === bufferSize) {
+          fileIo.writeSync(targetFd, buffer);
+        } else {
+          fileIo.writeSync(targetFd, buffer.slice(0, readSize));
+        }
+        readSize = fileIo.readSync(sourceFd, buffer);
+      }
+    }
   }
 
   private toUtf8(text: string): ArrayBuffer {

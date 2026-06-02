@@ -19,6 +19,7 @@ export interface RelayUploadResponse {
   contentType: string;
   sizeBytes: number;
   encrypted: boolean;
+  expiresAt?: string;
 }
 
 export interface RelayDownloadRequest {

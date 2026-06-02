@@ -60,9 +60,11 @@ export class DefaultTransferService implements TransferService {
   async uploadLocalFile(command: UploadLocalFileCommand): Promise<TransferTask> {
     const task = this.taskService.createTask(command.localFileId, 'UPLOAD', 'RELAY', command.shareId);
     this.taskService.start(task.id);
+    let uploadPath = '';
     try {
       const file = this.requireLocalFile(command.localFileId);
       let localUri = file.localUri;
+      uploadPath = localUri;
       let encrypted = false;
       let encryptionAlgorithm = '';
       let kdfAlgorithm = '';
@@ -73,7 +75,8 @@ export class DefaultTransferService implements TransferService {
       let e2eeAuthTag = '';
       let sha256 = '';
       let plainSizeBytes = file.sizeBytes;
-      if (command.encrypted) {
+      const shouldEncrypt = command.encrypted && file.contentType !== 'text/plain' && file.type !== 'TEXT';
+      if (shouldEncrypt) {
         const result = await encryptionService.encryptFile({
           sourceUri: file.localUri,
           plainSizeBytes: file.sizeBytes,
@@ -81,6 +84,7 @@ export class DefaultTransferService implements TransferService {
           kdfAlgorithm: 'NONE-RAW-KEY'
         });
         localUri = result.encryptedUri;
+        uploadPath = localUri;
         encrypted = true;
         encryptionAlgorithm = result.algorithm;
         kdfAlgorithm = result.kdfAlgorithm;
@@ -106,7 +110,7 @@ export class DefaultTransferService implements TransferService {
         plainSizeBytes: plainSizeBytes
       });
       if (command.onUploaded !== undefined) {
-        command.onUploaded(response.id, '', '', e2eeKeyMaterial, e2eeNonce, e2eeAuthTag);
+        command.onUploaded(response.id, '', response.expiresAt === undefined ? '' : response.expiresAt, e2eeKeyMaterial, e2eeNonce, e2eeAuthTag);
       }
       file.remoteCached = true;
       file.shareCount = file.shareCount + 1;
@@ -114,7 +118,8 @@ export class DefaultTransferService implements TransferService {
       this.fileIndexRepository.save(file);
       return this.taskService.complete(task.id);
     } catch (error) {
-      return this.taskService.fail(task.id, String(error));
+      const detail = uploadPath.length > 0 ? `${String(error)} · ${uploadPath}` : String(error);
+      return this.taskService.fail(task.id, detail);
     }
   }
 

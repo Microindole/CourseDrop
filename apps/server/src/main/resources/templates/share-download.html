@@ -173,7 +173,7 @@
             </div>
             <a th:class="${share.downloadAuthRequired} ? 'download-link pointer-events-none rounded-lg bg-zinc-100 dark:bg-zinc-900 px-4 py-2 text-xs font-bold text-zinc-400 dark:text-zinc-600 transition shadow-sm' : 'download-link rounded-lg bg-zinc-950 dark:bg-emerald-400 px-4 py-2 text-xs font-bold text-white dark:text-zinc-950 transition hover:opacity-90 active:scale-95 shadow-md'"
               th:href="@{'/s/' + ${share.code} + '/items/' + ${item.id} + '/download'}"
-              th:attr="data-filename=${item.displayName},data-encrypted=${item.encrypted},data-algorithm=${item.encryptionAlgorithm},data-nonce=${item.nonce}">
+              th:attr="data-item-id=${item.id},data-filename=${item.displayName},data-encrypted=${item.encrypted},data-algorithm=${item.encryptionAlgorithm},data-nonce=${item.nonce}">
               下载
             </a>
           </li>
@@ -410,7 +410,9 @@
 
   <script>
     // WebCrypto 解密下载逻辑 (必须保留)
-    const key = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("key");
+    const fragmentParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const key = fragmentParams.get("key") || fragmentParams.get("cdkey");
+    const keyMap = parseCourseDropKeys(key);
 
     document.querySelectorAll(".download-link").forEach((link) => {
       link.addEventListener("click", async (event) => {
@@ -419,13 +421,14 @@
         }
         event.preventDefault();
         try {
+          const itemKey = resolveItemKey(link, key, keyMap);
           const response = await fetch(link.href, { credentials: "include" });
           if (!response.ok) {
             window.location.href = link.href;
             return;
           }
           const cipherBytes = new Uint8Array(await response.arrayBuffer());
-          const plainBytes = await decryptAesGcm(cipherBytes, key, link.dataset.nonce);
+          const plainBytes = await decryptAesGcm(cipherBytes, itemKey.keyMaterial, itemKey.nonce, itemKey.authTag);
           saveBytes(plainBytes, link.dataset.filename || "coursedrop-file");
         } catch (error) {
           window.location.href = link.href;
@@ -433,19 +436,75 @@
       });
     });
 
-    async function decryptAesGcm(cipherBytes, encodedKey, encodedNonce) {
+    function parseCourseDropKeys(encoded) {
+      const keys = {};
+      if (!encoded) {
+        return keys;
+      }
+      decodeURIComponent(encoded).split(",").forEach((entry) => {
+        const parts = entry.split(":");
+        if (parts.length >= 4) {
+          keys[parts[0]] = {
+            keyMaterial: parts[1],
+            nonce: parts[2],
+            authTag: parts[3]
+          };
+        }
+      });
+      return keys;
+    }
+
+    function resolveItemKey(link, fallbackKey, keys) {
+      const itemId = link.dataset.itemId || "";
+      if (itemId && keys[itemId]) {
+        return keys[itemId];
+      }
+      return {
+        keyMaterial: fallbackKey,
+        nonce: link.dataset.nonce,
+        authTag: ""
+      };
+    }
+
+    async function decryptAesGcm(cipherBytes, encodedKey, encodedNonce, encodedAuthTag) {
+      const nonceParts = (encodedNonce || "").split(".");
+      const nonce = nonceParts[0] || encodedNonce;
+      const authTag = encodedAuthTag || nonceParts[1] || "";
+      const encryptedBytes = authTag ? concatBytes(cipherBytes, decodeBytes(authTag)) : cipherBytes;
       const cryptoKey = await crypto.subtle.importKey(
         "raw",
-        decodeBase64Url(encodedKey),
+        decodeBytes(encodedKey),
         { name: "AES-GCM" },
         false,
         ["decrypt"]
       );
       return new Uint8Array(await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: decodeBase64Url(encodedNonce) },
+        { name: "AES-GCM", iv: decodeBytes(nonce) },
         cryptoKey,
-        cipherBytes
+        encryptedBytes
       ));
+    }
+
+    function decodeBytes(value) {
+      if (/^[0-9a-fA-F]+$/.test(value) && value.length % 2 === 0) {
+        return decodeHex(value);
+      }
+      return decodeBase64Url(value);
+    }
+
+    function decodeHex(value) {
+      const bytes = new Uint8Array(value.length / 2);
+      for (let index = 0; index < bytes.length; index += 1) {
+        bytes[index] = Number.parseInt(value.substring(index * 2, index * 2 + 2), 16);
+      }
+      return bytes;
+    }
+
+    function concatBytes(first, second) {
+      const result = new Uint8Array(first.byteLength + second.byteLength);
+      result.set(first, 0);
+      result.set(second, first.byteLength);
+      return result;
     }
 
     function decodeBase64Url(value) {

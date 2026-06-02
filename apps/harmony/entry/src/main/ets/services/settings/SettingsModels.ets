@@ -10,7 +10,7 @@ export interface AppSettings {
 export class DefaultAppSettings {
   static create(): AppSettings {
     return {
-      e2eeEnabled: true,
+      e2eeEnabled: false,
       lanFirstEnabled: true,
       defaultExpireHours: '24',
       cachePolicy: 'EXPIRED_ONLY'

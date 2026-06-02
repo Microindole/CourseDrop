@@ -40,16 +40,15 @@ export class CourseDropFileImportService implements FileImportService {
     if (targetDirectory.length === 0) {
       throw new Error('应用沙箱目录未初始化');
     }
-    const localUri = this.fileSystemService.copyToDirectory(file.uri, targetDirectory, file.displayName);
-    const metadata = this.fileSystemService.stat(localUri, file.contentType);
+    const copiedFile = this.fileSystemService.copyToDirectory(file.uri, targetDirectory, file.displayName);
     const localFileId = `local-${Date.now()}`;
     const entry: LocalFileEntry = {
       id: localFileId,
       displayName: file.displayName,
       type: file.type,
-      contentType: metadata.contentType,
-      sizeBytes: metadata.sizeBytes,
-      localUri: localUri,
+      contentType: file.contentType,
+      sizeBytes: copiedFile.sizeBytes,
+      localUri: copiedFile.path,
       shareCount: 0,
       remoteCached: false,
       encrypted: false
@@ -57,7 +56,7 @@ export class CourseDropFileImportService implements FileImportService {
     this.indexRepository.save(entry);
     return {
       localFileId: localFileId,
-      localUri: localUri
+      localUri: copiedFile.path
     };
   }
 }

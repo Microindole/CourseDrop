@@ -125,6 +125,33 @@ class ShareFlowTests {
     }
 
     @Test
+    void browserDownloadPageRendersUploadedItems() throws Exception {
+        var createResult = mockMvc.perform(post("/api/shares")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "expireHours": 1,
+                          "downloadPolicy": "PUBLIC",
+                          "ownerIdentityType": "ANONYMOUS"
+                        }
+                        """))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode share = objectMapper.readTree(createResult.getResponse().getContentAsString());
+        var shareId = share.get("id").asText();
+        var code = share.get("code").asText();
+
+        var file = new MockMultipartFile("file", "google邮箱.txt", "text/plain", "hello browser".getBytes());
+        mockMvc.perform(multipart("/api/shares/{shareId}/items", shareId).file(file))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/s/{code}", code))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("google邮箱.txt")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("download-link")));
+    }
+
+    @Test
     void loginRequiredBrowserDownloadRequiresAuthorizationHeader() throws Exception {
         var createResult = mockMvc.perform(post("/api/shares")
                 .contentType(MediaType.APPLICATION_JSON)

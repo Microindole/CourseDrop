@@ -84,7 +84,7 @@ export class ShareViewModel {
     if (this.currentSession.shareUrl.length === 0 || !apiClient.hasBaseUrl()) {
       return '';
     }
-    return `${apiClient.getBaseUrl()}/api/qr.png?text=${encodeURIComponent(this.currentSession.shareUrl)}`;
+    return `${apiClient.getBaseUrl()}/api/qr?text=${encodeURIComponent(this.currentSession.shareUrl)}`;
   }
 
   async refreshShareCode(): Promise<void> {
@@ -102,7 +102,13 @@ export class ShareViewModel {
         this.lastActionText = result.message;
         this.errorMessage = result.message;
       } else if (this.errorMessage.length === 0) {
-        this.lastActionText = '公网分享已创建，当前草稿已上传';
+        const uploadedCount = this.currentSession.items.filter((item) => item.remoteItemId !== undefined && item.remoteItemId.length > 0).length;
+        if (uploadedCount === this.currentSession.items.length) {
+          this.lastActionText = '公网分享已创建，当前草稿已上传';
+        } else {
+          this.lastActionText = '公网分享已创建，但文件仍未上传完成';
+          this.errorMessage = '请查看下方上传任务状态，失败后可重试上传。';
+        }
       }
     } catch (error) {
       this.lastActionText = '生成分享失败';
@@ -239,6 +245,7 @@ export class ShareViewModel {
       this.lastActionText = `分享已创建，但 ${failedCount} 个文件上传失败`;
       this.errorMessage = lastError;
     }
+    this.currentSession = shareService.getCurrentSession();
   }
 
   private rememberE2eeKey(remoteItemId: string, keyMaterial: string, nonce: string, authTag: string): void {

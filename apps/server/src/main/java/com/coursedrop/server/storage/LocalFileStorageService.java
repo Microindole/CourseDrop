@@ -24,7 +24,10 @@ public class LocalFileStorageService {
     public StoredObject store(MultipartFile file) {
         try {
             Files.createDirectories(uploadRoot);
-            var storageKey = UUID.randomUUID().toString();
+            var safeName = FileNameCleaner.clean(file.getOriginalFilename());
+            var storageKey = safeName.isBlank()
+                    ? UUID.randomUUID().toString()
+                    : UUID.randomUUID() + "-" + safeName;
             var target = uploadRoot.resolve(storageKey).normalize();
             file.transferTo(target);
             return new StoredObject(storageKey, target, Files.size(target));
