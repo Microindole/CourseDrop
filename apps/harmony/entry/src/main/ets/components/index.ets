@@ -28,4 +28,5 @@ export { CdLanRadarScanner } from './business/CdLanRadarScanner';
 export { CdLanDeviceList } from './business/CdLanDeviceList';
 export { CdHomeGuideStep } from './business/CdHomeGuideStep';
 export { CdHomeRecentShares } from './business/CdHomeRecentShares';
+export { CdShareExtractDrawer } from './business/CdShareExtractDrawer';
 export { CdTransferStats } from './business/CdTransferStats';

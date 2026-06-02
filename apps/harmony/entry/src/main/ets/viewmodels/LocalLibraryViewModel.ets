@@ -32,7 +32,11 @@ export class LocalLibraryViewModel {
 
   shareSelected(selectedIds: string[]): string {
     let attachedCount = 0;
-    const session = shareService.getCurrentSession();
+    let session = shareService.getCurrentSession();
+    if (session.status !== 'DRAFT') {
+      shareService.returnToDraft(session.id);
+      session = shareService.getCurrentSession();
+    }
     for (let index = 0; index < selectedIds.length; index += 1) {
       const result = shareService.attachLocalFile(session.id, selectedIds[index]);
       if (result.success) {

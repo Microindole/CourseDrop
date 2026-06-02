@@ -123,6 +123,34 @@ export default struct SharePage {
           tone: this.errorMessage.length > 0 ? 'danger' : 'info'
         })
 
+        CdPanel() {
+          Row({ space: AppSpacing.MD }) {
+            Column({ space: 4 }) {
+              Text('接收别人分享')
+                .fontSize(AppTypography.BODY)
+                .fontWeight(FontWeight.Bold)
+                .fontColor(AppColors.TEXT)
+
+              Text('扫码或输入提取码，下载到本地库')
+                .fontSize(AppTypography.BODY_SMALL)
+                .fontColor(AppColors.TEXT_SECONDARY)
+            }
+            .layoutWeight(1)
+            .alignItems(HorizontalAlign.Start)
+
+            CdButton({
+              label: '去接收',
+              variant: 'tonal',
+              onTap: () => {
+                router.pushUrl({ url: 'pages/ShareDownloadPage' });
+              }
+            })
+            .width(96)
+          }
+          .width('100%')
+          .alignItems(VerticalAlign.Center)
+        }
+
         // 提取中心控制卡片
         CdShareControlCenter({
           currentSession: $currentSession,

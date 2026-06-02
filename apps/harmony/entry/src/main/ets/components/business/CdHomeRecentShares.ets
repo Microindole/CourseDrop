@@ -5,7 +5,7 @@ import { CdPanel } from '../common/CdPanel';
 @Component
 export struct CdHomeRecentShares {
   recentShares: ShareSession[] = [];
-  onRecentTap: () => void = () => {};
+  onRecentTap: (share: ShareSession) => void = (_share: ShareSession) => {};
 
   private sessionText(session: ShareSession): string {
     if (session.status === 'DRAFT') return '草稿';
@@ -32,7 +32,7 @@ export struct CdHomeRecentShares {
         CdPanel({
           clickable: true,
           onTap: () => {
-            this.onRecentTap();
+            this.onRecentTap(share);
           }
         }) {
           Row({ space: AppSpacing.MD }) {

@@ -13,9 +13,12 @@ import {
   CdSectionHeader,
   CdTransferStats,
   CdHomeGuideStep,
-  CdHomeRecentShares
+  CdHomeRecentShares,
+  CdShareExtractDrawer
 } from '../components/index';
 import { ShareSession } from '../models/ShareSession';
+import { clipboardService } from '../services/clipboard';
+import { shareQrImageService } from '../services/share';
 import { HomeViewModel, HomeTransferStats } from '../viewmodels/HomeViewModel';
 
 @Entry
@@ -26,6 +29,9 @@ struct HomePage {
   
   @State recentShares: ShareSession[] = [];
   @State transferStats: HomeTransferStats = { activeCount: 0, completedCount: 0, failedCount: 0, expiringCount: 0 };
+  @State selectedRecentShare: ShareSession | null = null;
+  @State recentShareQrImageUrl: string = '';
+  @State recentShareQrErrorText: string = '';
 
   aboutToAppear() {
     this.syncHomeData();
@@ -35,6 +41,45 @@ struct HomePage {
     this.viewModel = new HomeViewModel();
     this.recentShares = this.viewModel.recentShares;
     this.transferStats = this.viewModel.getTransferStats();
+  }
+
+  private openRecentShare(share: ShareSession): void {
+    this.selectedRecentShare = this.copyShare(share);
+    this.recentShareQrImageUrl = '';
+    this.recentShareQrErrorText = '';
+    shareQrImageService.loadQrImage(share.shareUrl)
+      .then((localUri: string) => {
+        this.recentShareQrImageUrl = localUri;
+      })
+      .catch((error: Error) => {
+        this.recentShareQrErrorText = `二维码加载失败：${String(error)}`;
+      });
+  }
+
+  private copyShare(share: ShareSession): ShareSession {
+    return {
+      id: share.id,
+      title: share.title,
+      code: share.code,
+      shareUrl: share.shareUrl,
+      status: share.status,
+      networkMode: share.networkMode,
+      expireStatus: share.expireStatus,
+      createdAt: share.createdAt,
+      expiresAt: share.expiresAt,
+      itemCount: share.itemCount,
+      totalSizeBytes: share.totalSizeBytes,
+      encrypted: share.encrypted,
+      downloadPolicy: share.downloadPolicy,
+      items: share.items.slice()
+    };
+  }
+
+  private copyText(text: string): void {
+    clipboardService.copyText(text)
+      .catch((error: Error) => {
+        console.error(`[CourseDrop] copy recent share failed: ${String(error)}`);
+      });
   }
 
   @Builder
@@ -161,8 +206,8 @@ struct HomePage {
       // 最近分享提取列表
       CdHomeRecentShares({
         recentShares: this.recentShares,
-        onRecentTap: () => {
-          this.currentIndex = 1; // 分享 Tab
+        onRecentTap: (share: ShareSession) => {
+          this.openRecentShare(share);
         }
       })
     }
@@ -175,7 +220,12 @@ struct HomePage {
 
   @Builder
   LibraryTab() {
-    LocalLibraryPage({ showBack: false })
+    LocalLibraryPage({
+      showBack: false,
+      onSharePrepared: () => {
+        this.currentIndex = 1;
+      }
+    })
   }
 
   @Builder
@@ -213,6 +263,20 @@ struct HomePage {
           this.SettingsTab();
         }
       })
+
+      if (this.selectedRecentShare !== null) {
+        CdShareExtractDrawer({
+          selectedShare: $selectedRecentShare,
+          qrImageUrl: this.recentShareQrImageUrl,
+          qrErrorText: this.recentShareQrErrorText,
+          onCopyCode: (code: string) => {
+            this.copyText(code);
+          },
+          onCopyLink: (link: string) => {
+            this.copyText(link);
+          }
+        })
+      }
     }
     .width('100%')
     .height('100%')

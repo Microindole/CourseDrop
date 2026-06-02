@@ -3,7 +3,6 @@ import { AppColors, AppShadows, AppSpacing, AppSize, AppTypography } from '../..
 @Component
 export struct CdBottomTabs {
   @Link currentIndex: number;
-  private tabsController: TabsController = new TabsController();
   
   @BuilderParam homeContent: () => void = this.defaultContent;
   @BuilderParam shareContent: () => void = this.defaultContent;
@@ -68,51 +67,28 @@ export struct CdBottomTabs {
     })
     .onClick(() => {
       this.currentIndex = index;
-      this.tabsController.changeIndex(index);
       this.onTabChange(index);
     })
   }
 
   build() {
     Column() {
-      // 原生 Tabs 容器，隐藏自带 tabBar，占据剩余高度
-      Tabs({
-        barPosition: BarPosition.End,
-        controller: this.tabsController
-      }) {
-        TabContent() {
+      Stack({ alignContent: Alignment.TopStart }) {
+        if (this.currentIndex === 0) {
           this.homeContent()
-        }
-        .backgroundColor(AppColors.BACKGROUND)
-
-        TabContent() {
+        } else if (this.currentIndex === 1) {
           this.shareContent()
-        }
-        .backgroundColor(AppColors.BACKGROUND)
-
-        TabContent() {
+        } else if (this.currentIndex === 2) {
           this.libraryContent()
-        }
-        .backgroundColor(AppColors.BACKGROUND)
-
-        TabContent() {
+        } else if (this.currentIndex === 3) {
           this.deviceContent()
-        }
-        .backgroundColor(AppColors.BACKGROUND)
-
-        TabContent() {
+        } else {
           this.settingsContent()
         }
-        .backgroundColor(AppColors.BACKGROUND)
       }
       .width('100%')
-      .layoutWeight(1) // 撑满除底部栏外的剩余高度
-      .barHeight(0) // 完全隐藏原生 tabBar
-      .scrollable(false) // 禁用滑动切换，防止与底栏状态脱节
-      .onChange((index: number) => {
-        this.currentIndex = index;
-        this.onTabChange(index);
-      })
+      .layoutWeight(1)
+      .backgroundColor(AppColors.BACKGROUND)
 
       // 自定义高质感占位底部导航栏
       Row() {

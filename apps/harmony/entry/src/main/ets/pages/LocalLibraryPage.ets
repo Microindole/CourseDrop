@@ -19,6 +19,7 @@ import { LocalLibraryViewModel, LocalLibraryFilter } from '../viewmodels/LocalLi
 @Component
 export default struct LocalLibraryPage {
   showBack: boolean = true;
+  onSharePrepared: () => void = () => {};
   private viewModel: LocalLibraryViewModel = new LocalLibraryViewModel();
 
   @State files: LocalFileEntry[] = [];
@@ -267,6 +268,7 @@ export default struct LocalLibraryPage {
             this.isEditMode = false;
             this.refreshFiles();
             this.clampPage();
+            this.onSharePrepared();
           },
           onDeleteSelected: () => {
             const msg = this.viewModel.deleteSelected(this.selectedIds);
@@ -290,6 +292,7 @@ export default struct LocalLibraryPage {
             this.isBannerError = false;
             this.refreshFiles();
             this.clampPage();
+            this.onSharePrepared();
           },
           onDelete: (id) => {
             const msg = this.viewModel.deleteSelected([id]);

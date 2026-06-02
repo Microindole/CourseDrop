@@ -41,8 +41,9 @@ export class ShareQrImageService {
     try {
       return await this.requestPng(primaryUrl);
     } catch (error) {
-      if (String(error).indexOf('HTTP 404') < 0) {
-        throw error;
+      const message = String(error);
+      if (message.indexOf('HTTP 404') < 0) {
+        throw new Error(message);
       }
       return await this.requestPng(fallbackUrl);
     }
