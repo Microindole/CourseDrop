@@ -3,6 +3,7 @@ import { Device } from '../models/Device';
 import {
   deviceDiscoveryService,
   lanPairingService,
+  lanPairingTransportService,
   LanPairingSession,
   TrustedDevice
 } from '../services/device';
@@ -40,6 +41,7 @@ export class DeviceViewModel {
   async startLanResponder(): Promise<void> {
     try {
       await deviceDiscoveryService.startLanResponder();
+      await lanPairingTransportService.start();
       this.lastActionText = '局域网设备监听已开启';
       this.errorMessage = '';
     } catch (error) {
@@ -50,9 +52,10 @@ export class DeviceViewModel {
 
   stopLanResponder(): void {
     deviceDiscoveryService.stopLanResponder();
+    lanPairingTransportService.stop();
   }
 
-  startPairing(device: Device): LanPairingSession | undefined {
+  async startPairing(device: Device): Promise<LanPairingSession | undefined> {
     if (device.status === 'OFFLINE') {
       this.lastActionText = `${device.name} 当前离线`;
       this.errorMessage = '请先刷新或测试连接后再发起配对';
@@ -63,9 +66,28 @@ export class DeviceViewModel {
       deviceDiscoveryService.getLocalDeviceId(),
       deviceDiscoveryService.getLocalPublicKey()
     );
+    if (device.id === 'debug-pc-mock-001') {
+      const accepted = lanPairingService.acceptPairing(session.id, `debug-public-key-${device.id}`);
+      this.refreshPairingState();
+      if (accepted !== undefined) {
+        this.lastActionText = `调试设备已响应，请核对验证码 ${accepted.verificationCode}`;
+        this.errorMessage = '';
+        return accepted;
+      }
+    }
+    const request = lanPairingService.createRequestMessage(session.id, 'CourseDrop Harmony');
+    if (request !== undefined && device.address !== undefined && device.address.length > 0) {
+      try {
+        await lanPairingTransportService.send(request, device.address);
+      } catch (error) {
+        this.errorMessage = `配对请求发送失败：${String(error)}`;
+      }
+    }
     this.refreshPairingState();
-    this.lastActionText = `请在两台设备上核对验证码 ${session.verificationCode}`;
-    this.errorMessage = '';
+    this.lastActionText = `已向 ${device.name} 发送配对请求`;
+    if (this.errorMessage.length === 0) {
+      this.errorMessage = '';
+    }
     return session;
   }
 

@@ -38,6 +38,7 @@ export {
   DeepSeekProvider,
   DefaultAiAssistantService,
   DefaultAiDocumentService,
+  DefaultAiFileAnalysisService,
   DefaultAiProviderConfig,
   DefaultAiRuntimeLimits,
   DocumentParserFactory,
@@ -55,6 +56,7 @@ export {
   aiAssistantService,
   aiConfigRepository,
   aiDocumentService,
+  aiFileAnalysisService,
   aiMemoryRepository
 } from './ai';
 export type {
@@ -66,7 +68,10 @@ export type {
   AiConversation,
   AiConversationSummary,
   AiDocumentService,
+  AiFileAnalysisService,
   AiFileContext,
+  AiFileSummaryCommand,
+  AiFileSummaryResult,
   AiMemoryRepository,
   AiMessage,
   AiMessageMetadata,

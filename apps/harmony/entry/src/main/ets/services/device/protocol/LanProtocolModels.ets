@@ -7,6 +7,7 @@ export class LanProtocolNames {
 }
 
 export type LanDiscoveryKind = 'DISCOVER' | 'ANNOUNCE';
+export type LanPairingMessageKind = 'PAIR_REQUEST' | 'PAIR_ACCEPT' | 'PAIR_REJECT';
 export type LanPairingStatus = 'PENDING' | 'VERIFYING' | 'TRUSTED' | 'REJECTED' | 'EXPIRED';
 export type LanPairingRole = 'INITIATOR' | 'RESPONDER';
 export type LanSecureChannelStatus = 'PENDING' | 'ESTABLISHED' | 'FAILED' | 'CLOSED';
@@ -38,6 +39,20 @@ export interface LanPairingSession {
   verificationCode: string;
   createdAt: string;
   expiresAt: string;
+}
+
+export interface LanPairingMessage {
+  protocol: string;
+  kind: LanPairingMessageKind;
+  sessionId: string;
+  localDeviceId: string;
+  localDeviceName: string;
+  localPlatform: DevicePlatform;
+  localPublicKey: string;
+  remoteDeviceId: string;
+  verificationCode: string;
+  reason: string;
+  sentAt: number;
 }
 
 export interface TrustedDevice {
@@ -139,13 +154,65 @@ export class LanPairingFactory {
     return session;
   }
 
+  static createPendingSession(
+    role: LanPairingRole,
+    localDeviceId: string,
+    remoteDeviceId: string,
+    remoteName: string,
+    remoteAddress: string,
+    localPublicKey: string
+  ): LanPairingSession {
+    const createdAt = new Date();
+    const expiresAt = new Date(createdAt.getTime() + 5 * 60 * 1000);
+    const session: LanPairingSession = {
+      id: `pair-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
+      role: role,
+      localDeviceId: localDeviceId,
+      remoteDeviceId: remoteDeviceId,
+      remoteName: remoteName,
+      remoteAddress: remoteAddress,
+      status: 'PENDING',
+      localPublicKey: localPublicKey,
+      remotePublicKey: '',
+      verificationCode: '',
+      createdAt: createdAt.toISOString(),
+      expiresAt: expiresAt.toISOString()
+    };
+    return session;
+  }
+
+  static completeHandshake(session: LanPairingSession, remotePublicKey: string): LanPairingSession {
+    const completed: LanPairingSession = {
+      id: session.id,
+      role: session.role,
+      localDeviceId: session.localDeviceId,
+      remoteDeviceId: session.remoteDeviceId,
+      remoteName: session.remoteName,
+      remoteAddress: session.remoteAddress,
+      status: 'VERIFYING',
+      localPublicKey: session.localPublicKey,
+      remotePublicKey: remotePublicKey,
+      verificationCode: LanPairingFactory.verificationCode(
+        session.localDeviceId,
+        session.remoteDeviceId,
+        session.localPublicKey,
+        remotePublicKey
+      ),
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt
+    };
+    return completed;
+  }
+
   private static verificationCode(
     localDeviceId: string,
     remoteDeviceId: string,
     localPublicKey: string,
     remotePublicKey: string
   ): string {
-    const material = `${localDeviceId}|${remoteDeviceId}|${localPublicKey}|${remotePublicKey}`;
+    const localEndpoint = `${localDeviceId}:${localPublicKey}`;
+    const remoteEndpoint = `${remoteDeviceId}:${remotePublicKey}`;
+    const material = localEndpoint < remoteEndpoint ? `${localEndpoint}|${remoteEndpoint}` : `${remoteEndpoint}|${localEndpoint}`;
     let hash = 0;
     for (let index = 0; index < material.length; index += 1) {
       hash = ((hash << 5) - hash + material.charCodeAt(index)) | 0;
@@ -160,5 +227,81 @@ export class LanPairingFactory {
       result = `0${result}`;
     }
     return result;
+  }
+}
+
+export class LanPairingProtocol {
+  static createRequest(session: LanPairingSession, localDeviceName: string): LanPairingMessage {
+    const message: LanPairingMessage = {
+      protocol: LanProtocolNames.PAIRING,
+      kind: 'PAIR_REQUEST',
+      sessionId: session.id,
+      localDeviceId: session.localDeviceId,
+      localDeviceName: localDeviceName,
+      localPlatform: 'HARMONY',
+      localPublicKey: session.localPublicKey,
+      remoteDeviceId: session.remoteDeviceId,
+      verificationCode: '',
+      reason: '',
+      sentAt: Date.now()
+    };
+    return message;
+  }
+
+  static createAccept(session: LanPairingSession, localDeviceName: string): LanPairingMessage {
+    const message: LanPairingMessage = {
+      protocol: LanProtocolNames.PAIRING,
+      kind: 'PAIR_ACCEPT',
+      sessionId: session.id,
+      localDeviceId: session.localDeviceId,
+      localDeviceName: localDeviceName,
+      localPlatform: 'HARMONY',
+      localPublicKey: session.localPublicKey,
+      remoteDeviceId: session.remoteDeviceId,
+      verificationCode: session.verificationCode,
+      reason: '',
+      sentAt: Date.now()
+    };
+    return message;
+  }
+
+  static createReject(session: LanPairingSession, localDeviceName: string, reason: string): LanPairingMessage {
+    const message: LanPairingMessage = {
+      protocol: LanProtocolNames.PAIRING,
+      kind: 'PAIR_REJECT',
+      sessionId: session.id,
+      localDeviceId: session.localDeviceId,
+      localDeviceName: localDeviceName,
+      localPlatform: 'HARMONY',
+      localPublicKey: session.localPublicKey,
+      remoteDeviceId: session.remoteDeviceId,
+      verificationCode: '',
+      reason: reason,
+      sentAt: Date.now()
+    };
+    return message;
+  }
+
+  static encode(message: LanPairingMessage): string {
+    return JSON.stringify(message);
+  }
+
+  static parse(text: string): LanPairingMessage | undefined {
+    try {
+      const message = JSON.parse(text) as LanPairingMessage;
+      if (message.protocol !== LanProtocolNames.PAIRING) {
+        return undefined;
+      }
+      if (message.kind !== 'PAIR_REQUEST' && message.kind !== 'PAIR_ACCEPT' && message.kind !== 'PAIR_REJECT') {
+        return undefined;
+      }
+      if (message.sessionId.length === 0 || message.localDeviceId.length === 0) {
+        return undefined;
+      }
+      return message;
+    } catch (error) {
+      console.error(`[CourseDrop] parse lan pairing protocol failed: ${String(error)}`);
+      return undefined;
+    }
   }
 }

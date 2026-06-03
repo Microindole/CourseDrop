@@ -2,6 +2,9 @@ import { appPreferencesStore } from '../../common/AppPreferencesStore';
 import { RelayServerConfig } from '../../models/RelayServerConfig';
 
 const KEY_RELAY_SERVERS: string = 'relay.servers';
+const OFFICIAL_RELAY_ID: string = 'relay-official-coursedrop';
+const OFFICIAL_RELAY_NAME: string = 'CourseDrop 官方中转源';
+const OFFICIAL_RELAY_URL: string = 'https://coursedrop.microindole.me';
 
 export interface RelaySourceRepository {
   list(): RelayServerConfig[];
@@ -80,10 +83,30 @@ export class PreferencesRelaySourceRepository implements RelaySourceRepository {
       console.error(`[CourseDrop] load relay sources failed: ${String(error)}`);
       this.relayServers = [];
     }
+    this.ensureOfficialRelaySource();
   }
 
   private persist(): void {
     appPreferencesStore.putString(KEY_RELAY_SERVERS, JSON.stringify(this.relayServers));
+  }
+
+  private ensureOfficialRelaySource(): void {
+    const existing = this.relayServers.find((server: RelayServerConfig) => server.url === OFFICIAL_RELAY_URL);
+    if (existing !== undefined) {
+      return;
+    }
+    const official: RelayServerConfig = {
+      id: OFFICIAL_RELAY_ID,
+      name: OFFICIAL_RELAY_NAME,
+      url: OFFICIAL_RELAY_URL,
+      enabled: true,
+      priority: 1
+    };
+    this.relayServers.forEach((server: RelayServerConfig) => {
+      server.priority += 1;
+    });
+    this.relayServers.push(official);
+    this.persist();
   }
 
   private copyServers(source: RelayServerConfig[]): RelayServerConfig[] {

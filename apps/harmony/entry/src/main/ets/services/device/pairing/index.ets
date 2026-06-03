@@ -4,3 +4,5 @@ export type { TrustedDeviceRepository } from './TrustedDeviceRepository';
 export { PreferencesTrustedDeviceRepository } from './TrustedDeviceRepository';
 export type { LanPairingService } from './LanPairingService';
 export { DefaultLanPairingService } from './LanPairingService';
+export type { LanPairingTransportService } from './LanPairingTransportService';
+export { DefaultLanPairingTransportService } from './LanPairingTransportService';

@@ -1,11 +1,14 @@
 export {
   LanProtocolNames,
   LanDiscoveryProtocol,
+  LanPairingProtocol,
   LanPairingFactory
 } from './LanProtocolModels';
 export type {
   LanDiscoveryPayload,
   LanDiscoveryKind,
+  LanPairingMessage,
+  LanPairingMessageKind,
   LanPairingRole,
   LanPairingSession,
   LanPairingStatus,

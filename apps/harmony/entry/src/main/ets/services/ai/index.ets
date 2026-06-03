@@ -2,6 +2,7 @@ import { PreferencesAiConfigRepository } from './config';
 import { PreferencesAiMemoryRepository } from './memory';
 import { DefaultAiDocumentService, DocumentParserFactory } from './parsers';
 import { DefaultAiAssistantService } from './AiAssistantService';
+import { DefaultAiFileAnalysisService } from './AiFileAnalysisService';
 
 export {
   DefaultAiAssistantService
@@ -11,6 +12,14 @@ export type {
   AiSendMessageCommand,
   AiSendMessageResult
 } from './AiAssistantService';
+export {
+  DefaultAiFileAnalysisService
+} from './AiFileAnalysisService';
+export type {
+  AiFileAnalysisService,
+  AiFileSummaryCommand,
+  AiFileSummaryResult
+} from './AiFileAnalysisService';
 export {
   DeepSeekModels,
   DefaultAiProviderConfig,
@@ -100,5 +109,9 @@ export const aiDocumentService = new DefaultAiDocumentService(new DocumentParser
 export const aiAssistantService = new DefaultAiAssistantService(
   aiConfigRepository,
   aiMemoryRepository,
+  aiDocumentService
+);
+export const aiFileAnalysisService = new DefaultAiFileAnalysisService(
+  aiConfigRepository,
   aiDocumentService
 );

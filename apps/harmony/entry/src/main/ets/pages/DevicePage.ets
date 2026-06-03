@@ -122,9 +122,9 @@ export default struct DevicePage {
           }
         })
 
-        if (this.getVerifyingSessions().length > 0) {
+        if (this.getActivePairingSessions().length > 0) {
           CdSectionHeader({ title: '配对确认' })
-          ForEach(this.getVerifyingSessions(), (session: LanPairingSession) => {
+          ForEach(this.getActivePairingSessions(), (session: LanPairingSession) => {
             this.pairingSessionCard(session)
           }, (session: LanPairingSession) => session.id)
         }
@@ -177,8 +177,8 @@ export default struct DevicePage {
     this.syncDevices();
   }
 
-  private startPairing(device: Device): void {
-    this.viewModel.startPairing(device);
+  private async startPairing(device: Device): Promise<void> {
+    await this.viewModel.startPairing(device);
     this.syncDevices();
   }
 
@@ -192,8 +192,8 @@ export default struct DevicePage {
     this.syncDevices();
   }
 
-  private getVerifyingSessions(): LanPairingSession[] {
-    return this.pairingSessions.filter((session: LanPairingSession) => session.status === 'VERIFYING');
+  private getActivePairingSessions(): LanPairingSession[] {
+    return this.pairingSessions.filter((session: LanPairingSession) => session.status === 'VERIFYING' || session.status === 'PENDING');
   }
 
   @Builder
@@ -214,32 +214,40 @@ export default struct DevicePage {
           .alignItems(HorizontalAlign.Start)
           .layoutWeight(1)
 
-          Text('待核对')
+          Text(session.status === 'VERIFYING' ? '待核对' : '等待响应')
             .fontSize(AppTypography.CAPTION)
             .fontWeight(FontWeight.Bold)
-            .fontColor(AppColors.WARNING)
+            .fontColor(session.status === 'VERIFYING' ? AppColors.WARNING : AppColors.PRIMARY)
             .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-            .backgroundColor(AppColors.WARNING_SOFT)
+            .backgroundColor(session.status === 'VERIFYING' ? AppColors.WARNING_SOFT : AppColors.PRIMARY_SOFT)
             .borderRadius(AppRadius.SM)
         }
         .width('100%')
 
-        Column({ space: AppSpacing.XS }) {
-          Text('安全验证码')
+        if (session.status === 'VERIFYING') {
+          Column({ space: AppSpacing.XS }) {
+            Text('安全验证码')
+              .fontSize(AppTypography.CAPTION)
+              .fontColor(AppColors.TEXT_SECONDARY)
+
+            Text(session.verificationCode)
+              .fontSize(30)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(AppColors.PRIMARY_SELECTED)
+              .letterSpacing(4)
+          }
+          .width('100%')
+          .alignItems(HorizontalAlign.Center)
+          .padding({ top: AppSpacing.MD, bottom: AppSpacing.MD })
+          .backgroundColor(AppColors.PRIMARY_SOFT)
+          .borderRadius(AppRadius.MD)
+        } else {
+          Text('已发送配对请求，等待对端返回公钥后再显示验证码。')
             .fontSize(AppTypography.CAPTION)
             .fontColor(AppColors.TEXT_SECONDARY)
-
-          Text(session.verificationCode)
-            .fontSize(30)
-            .fontWeight(FontWeight.Bold)
-            .fontColor(AppColors.PRIMARY_SELECTED)
-            .letterSpacing(4)
+            .lineHeight(18)
+            .width('100%')
         }
-        .width('100%')
-        .alignItems(HorizontalAlign.Center)
-        .padding({ top: AppSpacing.MD, bottom: AppSpacing.MD })
-        .backgroundColor(AppColors.PRIMARY_SOFT)
-        .borderRadius(AppRadius.MD)
 
         Row({ space: AppSpacing.MD }) {
           CdButton({
@@ -250,13 +258,15 @@ export default struct DevicePage {
           })
           .layoutWeight(1)
 
-          CdButton({
-            label: '确认配对',
-            onTap: () => {
-              this.confirmPairing(session);
-            }
-          })
-          .layoutWeight(1)
+          if (session.status === 'VERIFYING') {
+            CdButton({
+              label: '确认配对',
+              onTap: () => {
+                this.confirmPairing(session);
+              }
+            })
+            .layoutWeight(1)
+          }
         }
         .width('100%')
       }
