@@ -88,9 +88,33 @@ export class DeviceViewModel {
     this.errorMessage = '';
   }
 
+  addDebugLanDevice(): void {
+    const device: Device = {
+      id: 'debug-pc-mock-001',
+      name: 'PC Mock Device',
+      platform: 'WINDOWS',
+      status: 'ONLINE',
+      networkMode: 'LAN',
+      latencyMs: 1,
+      address: '127.0.0.1:39092',
+      lastSeenAt: new Date().toISOString()
+    };
+    deviceDiscoveryService.saveManualDevice(device);
+    this.devices = deviceDiscoveryService.listDevices();
+    this.lastActionText = '已添加调试局域网设备';
+    this.errorMessage = '';
+  }
+
+  beginManualProbe(): void {
+    this.scanning = true;
+    this.lastActionText = '正在测试设备连接...';
+    this.errorMessage = '';
+  }
+
   async addManualDevice(name: string, address: string): Promise<void> {
     const normalizedAddress = this.normalizeAddress(address);
     if (normalizedAddress.length === 0) {
+      this.scanning = false;
       this.lastActionText = '请输入电脑或服务器地址';
       this.errorMessage = '示例：http://192.168.1.10:9090';
       return;

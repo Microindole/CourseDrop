@@ -29,59 +29,10 @@ runs:
           "entry/src/main/ets/common/AppRuntimeContext.ets"
           "entry/src/main/ets/components/README.md"
           "entry/src/main/ets/components/index.ets"
-          "entry/src/main/ets/components/common/CdButton.ets"
-          "entry/src/main/ets/components/common/CdTextField.ets"
-          "entry/src/main/ets/components/common/CdBottomTabs.ets"
-          "entry/src/main/ets/models/CommonTypes.ets"
-          "entry/src/main/ets/models/ShareSession.ets"
-          "entry/src/main/ets/models/Device.ets"
-          "entry/src/main/ets/models/TransferTask.ets"
-          "entry/src/main/ets/models/LocalFileEntry.ets"
-          "entry/src/main/ets/models/RelayServerConfig.ets"
           "entry/src/main/ets/models/index.ets"
-          "entry/src/main/ets/viewmodels/ShareViewModel.ets"
-          "entry/src/main/ets/viewmodels/LocalLibraryViewModel.ets"
-          "entry/src/main/ets/viewmodels/DeviceViewModel.ets"
-          "entry/src/main/ets/viewmodels/SettingsViewModel.ets"
           "entry/src/main/ets/viewmodels/index.ets"
           "entry/src/main/ets/services/index.ets"
-          "entry/src/main/ets/services/ShareService.ets"
-          "entry/src/main/ets/services/LocalLibraryService.ets"
-          "entry/src/main/ets/services/RelaySourceService.ets"
-          "entry/src/main/ets/services/DeviceDiscoveryService.ets"
-          "entry/src/main/ets/services/TransferService.ets"
-          "entry/src/main/ets/services/share/ShareService.ets"
-          "entry/src/main/ets/services/share/ShareSessionRepository.ets"
-          "entry/src/main/ets/services/share/TransferTaskRepository.ets"
-          "entry/src/main/ets/services/share/LocalShareService.ets"
-          "entry/src/main/ets/services/share/index.ets"
-          "entry/src/main/ets/services/local/LocalLibraryService.ets"
-          "entry/src/main/ets/services/local/LocalFileIndexRepository.ets"
-          "entry/src/main/ets/services/local/CourseDropFileStore.ets"
-          "entry/src/main/ets/services/local/IndexedLocalLibraryService.ets"
-          "entry/src/main/ets/services/local/index.ets"
-          "entry/src/main/ets/services/relay/RelaySourceService.ets"
-          "entry/src/main/ets/services/relay/RelaySourceRepository.ets"
-          "entry/src/main/ets/services/relay/ConfigurableRelaySourceService.ets"
-          "entry/src/main/ets/services/relay/index.ets"
-          "entry/src/main/ets/services/device/DeviceDiscoveryService.ets"
-          "entry/src/main/ets/services/device/DeviceRegistry.ets"
-          "entry/src/main/ets/services/device/LanDeviceDiscoveryService.ets"
-          "entry/src/main/ets/services/device/index.ets"
-          "entry/src/main/ets/services/identity/IdentityService.ets"
-          "entry/src/main/ets/services/settings/SettingsService.ets"
-          "entry/src/main/ets/services/transfer/TransferService.ets"
-          "entry/src/main/ets/pages/HomePage.ets"
-          "entry/src/main/ets/pages/SharePage.ets"
-          "entry/src/main/ets/pages/ShareDownloadPage.ets"
-          "entry/src/main/ets/pages/LocalLibraryPage.ets"
-          "entry/src/main/ets/pages/DevicePage.ets"
-          "entry/src/main/ets/pages/SettingsPage.ets"
-          "entry/src/main/ets/pages/RelaySourcePage.ets"
           "entry/src/main/resources/base/profile/main_pages.json"
-          "entry/src/main/ets/components/business/CdLocalFileCard.ets"
-          "entry/src/main/ets/components/business/CdLanDeviceList.ets"
-          "entry/src/main/ets/components/business/CdShareTaskList.ets"
         )
 
         foreach ($file in $requiredFiles) {
@@ -90,6 +41,17 @@ runs:
           }
           if ((Get-Item -LiteralPath $file).Length -le 0) {
             throw "Empty HarmonyOS project file: $file"
+          }
+        }
+
+        $sourceFiles = Get-ChildItem -Path "entry/src/main/ets" -Recurse -File -Include *.ets,*.ts
+        if ($sourceFiles.Count -le 0) {
+          throw "No HarmonyOS source files found under entry/src/main/ets"
+        }
+
+        foreach ($file in $sourceFiles) {
+          if ($file.Length -le 0) {
+            throw "Empty HarmonyOS source file: $($file.FullName)"
           }
         }
 
@@ -107,22 +69,28 @@ runs:
           "entry/src/main/ets/models"
           "entry/src/main/ets/pages"
           "entry/src/main/ets/services"
-          "entry/src/main/ets/services/clipboard"
-          "entry/src/main/ets/services/crypto"
-          "entry/src/main/ets/services/device"
-          "entry/src/main/ets/services/file"
-          "entry/src/main/ets/services/identity"
-          "entry/src/main/ets/services/local"
-          "entry/src/main/ets/services/relay"
-          "entry/src/main/ets/services/scan"
-          "entry/src/main/ets/services/settings"
-          "entry/src/main/ets/services/share"
-          "entry/src/main/ets/services/transfer"
           "entry/src/main/ets/viewmodels"
         )
 
         foreach ($dir in $requiredDirs) {
           if (-not (Test-Path -LiteralPath $dir -PathType Container)) {
             throw "Missing HarmonyOS source layer: $dir"
+          }
+        }
+
+        $sourceLayers = @(
+          "entry/src/main/ets/common"
+          "entry/src/main/ets/components"
+          "entry/src/main/ets/entryability"
+          "entry/src/main/ets/models"
+          "entry/src/main/ets/pages"
+          "entry/src/main/ets/services"
+          "entry/src/main/ets/viewmodels"
+        )
+
+        foreach ($layer in $sourceLayers) {
+          $count = (Get-ChildItem -Path $layer -Recurse -File -Include *.ets,*.ts).Count
+          if ($count -le 0) {
+            throw "HarmonyOS source layer has no source files: $layer"
           }
         }

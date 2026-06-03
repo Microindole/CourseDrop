@@ -85,13 +85,29 @@ export default struct DevicePage {
               value: $manualAddress
             })
 
-            CdButton({
-              label: this.scanning ? '正在测试连接...' : '测试并保存设备',
-              interactive: !this.scanning,
-              onTap: () => {
+            Button(this.scanning ? '正在测试连接...' : '测试并保存设备')
+              .enabled(!this.scanning)
+              .fontSize(AppTypography.BODY_SMALL)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(AppColors.SURFACE)
+              .backgroundColor(this.scanning ? AppColors.SURFACE_MUTED : AppColors.PRIMARY)
+              .borderRadius(AppRadius.XL)
+              .height(42)
+              .onClick(() => {
                 this.addManualDevice();
-              }
-            })
+              })
+            .width('100%')
+
+            Button('添加调试设备')
+              .fontSize(AppTypography.BODY_SMALL)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(AppColors.PRIMARY_SELECTED)
+              .backgroundColor(AppColors.ACCENT_SOFT)
+              .borderRadius(AppRadius.XL)
+              .height(42)
+              .onClick(() => {
+                this.addDebugLanDevice();
+              })
             .width('100%')
           }
           .width('100%')
@@ -143,7 +159,16 @@ export default struct DevicePage {
   }
 
   private async addManualDevice(): Promise<void> {
+    this.viewModel.beginManualProbe();
+    this.syncDevices();
     await this.viewModel.addManualDevice(this.manualName, this.manualAddress);
+    this.syncDevices();
+  }
+
+  private addDebugLanDevice(): void {
+    this.lastActionText = '正在添加调试设备...';
+    this.errorMessage = '';
+    this.viewModel.addDebugLanDevice();
     this.syncDevices();
   }
 
