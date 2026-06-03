@@ -5,7 +5,7 @@ import { CdPanel } from '../common/CdPanel';
 @Component
 export struct CdLanDeviceList {
   devices: Device[] = [];
-  onDeviceTap: (device: Device) => void = () => {};
+  onDeviceTap: (device: Device) => void = (_device: Device) => {};
 
   private statusText(device: Device): string {
     if (device.status === 'ONLINE') return '在线';
@@ -42,7 +42,7 @@ export struct CdLanDeviceList {
             .fontWeight(FontWeight.Bold)
             .fontColor(AppColors.TEXT)
 
-          Text('点击上方按钮发起局域网多播嗅探，CourseDrop 会自动建立与同网段设备的连接。')
+          Text('点击上方按钮发起局域网多播嗅探，发现设备后需要先核对验证码并完成配对。')
             .fontSize(AppTypography.BODY_SMALL)
             .fontColor(AppColors.TEXT_SECONDARY)
             .textAlign(TextAlign.Center)

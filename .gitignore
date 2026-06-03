@@ -27,3 +27,5 @@ apps/server/data/
 apps/server/uploads/
 apps/server/coursedrop.db
 apps/server/coursedrop.db-*
+
+__pycache__/
