@@ -30,6 +30,8 @@ export type { CameraScanResult, QrPayload, QrPayloadType, ScanDispatchResult } f
 export {
   DefaultGroupMessageService,
   DefaultGroupService,
+  CourseDropGroupCryptoService,
+  HttpGroupNetworkContract,
   PendingGroupCryptoService,
   PendingGroupNetworkContract,
   RuntimeLocalGroupMemberRepository,
@@ -60,7 +62,8 @@ export type {
   LocalGroupMessageRepository,
   LocalGroupRepository,
   ReceiveGroupFileCommand,
-  SendGroupFileMessageCommand
+  SendGroupFileMessageCommand,
+  SendGroupTextMessageCommand
 } from './group';
 export {
   AgentExecutor,

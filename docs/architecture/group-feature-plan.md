@@ -34,14 +34,14 @@ graph TD
 ### 1.2 核心领域服务层 (Domain Services)
 - **职责**：群组业务逻辑的核心封装层，实现按内容和关注点分离。
 - **文件与位置**：
-  - [apps/harmony/entry/src/main/ets/services/group/GroupService.ets](file:///D:/works/coursedrop/apps/harmony/entry/src/main/ets/services/group/GroupService.ets)
-  - [apps/harmony/entry/src/main/ets/services/group/GroupMessageService.ets](file:///D:/works/coursedrop/apps/harmony/entry/src/main/ets/services/group/GroupMessageService.ets)
-  - [apps/harmony/entry/src/main/ets/services/group/GroupCryptoService.ets](file:///D:/works/coursedrop/apps/harmony/entry/src/main/ets/services/group/GroupCryptoService.ets)
+  - [GroupService.ets](../../apps/harmony/entry/src/main/ets/services/group/GroupService.ets)
+  - [GroupMessageService.ets](../../apps/harmony/entry/src/main/ets/services/group/GroupMessageService.ets)
+  - [GroupCryptoService.ets](../../apps/harmony/entry/src/main/ets/services/group/GroupCryptoService.ets)
 
 ### 1.3 网络与契约层 (REST & WebSocket Contract)
 - **职责**：封装 REST API 交互和 WebSocket 的网络实时事件中继。
 - **文件与位置**：
-  - [apps/harmony/entry/src/main/ets/services/group/GroupNetworkContract.ets](file:///D:/works/coursedrop/apps/harmony/entry/src/main/ets/services/group/GroupNetworkContract.ets)
+  - [GroupNetworkContract.ets](../../apps/harmony/entry/src/main/ets/services/group/GroupNetworkContract.ets)
 
 ### 1.4 本地持久化层 (Database & Repository Layer)
 - **职责**：本地数据库的读写代理。

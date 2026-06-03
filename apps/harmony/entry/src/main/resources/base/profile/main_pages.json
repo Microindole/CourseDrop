@@ -6,6 +6,7 @@
     "pages/AiChatHistoryPage",
     "pages/AiChatSettingsPage",
     "pages/RelaySourcePage",
+    "pages/GroupTestPage",
     "pages/ShareDownloadPage"
   ]
 }

@@ -8,3 +8,4 @@ export type { LocalLibraryFilter } from './LocalLibraryViewModel';
 export { SettingsViewModel } from './SettingsViewModel';
 export type { CachePolicy } from './SettingsViewModel';
 export { ShareViewModel } from './ShareViewModel';
+export { GroupTestViewModel } from './GroupTestViewModel';

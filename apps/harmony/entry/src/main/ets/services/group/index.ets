@@ -1,5 +1,7 @@
-import { PendingGroupCryptoService } from './GroupCryptoService';
-import { PendingGroupNetworkContract } from './GroupNetworkContract';
+import { CourseDropGroupCryptoService } from './GroupCryptoService';
+import { HttpGroupNetworkContract } from './GroupNetworkContract';
+import { apiClient } from '../ApiClient';
+import { fileSystemService } from '../file';
 import {
   RuntimeLocalGroupMemberRepository,
   RuntimeLocalGroupMessageRepository,
@@ -13,7 +15,7 @@ export type {
   GroupEncryptedPayload,
   GroupMetadataEncryptionResult
 } from './GroupCryptoService';
-export { PendingGroupCryptoService } from './GroupCryptoService';
+export { CourseDropGroupCryptoService, PendingGroupCryptoService } from './GroupCryptoService';
 export type {
   GroupFileDownloadRequest,
   GroupFileDownloadResponse,
@@ -21,7 +23,7 @@ export type {
   GroupFileUploadResponse,
   GroupNetworkContract
 } from './GroupNetworkContract';
-export { PendingGroupNetworkContract } from './GroupNetworkContract';
+export { HttpGroupNetworkContract, PendingGroupNetworkContract } from './GroupNetworkContract';
 export type {
   LocalGroupMemberRepository,
   LocalGroupMessageRepository,
@@ -41,15 +43,16 @@ export { DefaultGroupService } from './GroupService';
 export type {
   GroupMessageService,
   ReceiveGroupFileCommand,
-  SendGroupFileMessageCommand
+  SendGroupFileMessageCommand,
+  SendGroupTextMessageCommand
 } from './GroupMessageService';
 export { DefaultGroupMessageService } from './GroupMessageService';
 
 export const localGroupRepository = new RuntimeLocalGroupRepository();
 export const localGroupMemberRepository = new RuntimeLocalGroupMemberRepository();
 export const localGroupMessageRepository = new RuntimeLocalGroupMessageRepository();
-export const groupCryptoService = new PendingGroupCryptoService();
-export const groupNetworkContract = new PendingGroupNetworkContract();
+export const groupCryptoService = new CourseDropGroupCryptoService();
+export const groupNetworkContract = new HttpGroupNetworkContract(apiClient, fileSystemService);
 export const groupService = new DefaultGroupService(
   localGroupRepository,
   localGroupMemberRepository,

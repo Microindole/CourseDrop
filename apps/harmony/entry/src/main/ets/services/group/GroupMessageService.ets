@@ -1,6 +1,7 @@
 import {
   GroupMessage,
-  PlainFilePayload
+  PlainFilePayload,
+  PlainTextPayload
 } from '../../models/Group';
 import { identityService } from '../identity';
 import { GroupCryptoService } from './GroupCryptoService';
@@ -15,6 +16,11 @@ export interface SendGroupFileMessageCommand {
   payload: PlainFilePayload;
 }
 
+export interface SendGroupTextMessageCommand {
+  groupId: string;
+  payload: PlainTextPayload;
+}
+
 export interface ReceiveGroupFileCommand {
   messageId: string;
   targetDirectory: string;
@@ -22,6 +28,7 @@ export interface ReceiveGroupFileCommand {
 
 export interface GroupMessageService {
   sendFileMessage(command: SendGroupFileMessageCommand): Promise<GroupMessage>;
+  sendTextMessage(command: SendGroupTextMessageCommand): Promise<GroupMessage>;
   receiveGroupFile(command: ReceiveGroupFileCommand): Promise<string>;
   syncGroupMessages(groupId: string): Promise<GroupMessage[]>;
   listLocalMessages(groupId: string): GroupMessage[];
@@ -79,6 +86,42 @@ export class DefaultGroupMessageService implements GroupMessageService {
     });
     return synced;
   }
+
+  async sendTextMessage(command: SendGroupTextMessageCommand): Promise<GroupMessage> {
+    const group = this.groupRepository.findById(command.groupId);
+    if (group === undefined) {
+      throw new Error('群组不存在');
+    }
+    const identity = identityService.getLocalIdentity();
+    const senderId = identity === undefined ? '' : identity.fingerprintId;
+    const encrypted = await this.cryptoService.encryptTextPayload(command.payload, group.groupKeyMaterial);
+    const message: GroupMessage = {
+      id: `group-message-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+      groupId: command.groupId,
+      senderId: senderId,
+      type: 'TEXT',
+      createdAt: new Date().toISOString(),
+      iv: encrypted.iv,
+      authTag: encrypted.authTag,
+      encryptedPayload: encrypted.ciphertext,
+      deliveryStatus: 'LOCAL_ONLY'
+    };
+    this.messageRepository.save(message);
+    const synced = await this.networkContract.sendMessage(command.groupId, message);
+    this.messageRepository.save({
+      id: synced.id,
+      groupId: synced.groupId,
+      senderId: synced.senderId,
+      type: synced.type,
+      createdAt: synced.createdAt,
+      iv: synced.iv,
+      authTag: synced.authTag,
+      encryptedPayload: synced.encryptedPayload,
+      deliveryStatus: 'SYNCED'
+    });
+    return synced;
+  }
+
 
   async receiveGroupFile(_command: ReceiveGroupFileCommand): Promise<string> {
     throw new Error('群组文件下载与解密流程尚未接入');
