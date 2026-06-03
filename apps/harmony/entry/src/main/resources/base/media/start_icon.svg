@@ -3,5 +3,4 @@
   <path d="M21 48H51" stroke="white" stroke-width="6" stroke-linecap="round"/>
   <path d="M36 17V40" stroke="white" stroke-width="7" stroke-linecap="round"/>
   <path d="M24 31L36 43L48 31" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M19 17H31" stroke="#8FDFFF" stroke-width="5" stroke-linecap="round"/>
 </svg>
