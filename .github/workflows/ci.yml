@@ -6,30 +6,83 @@ on:
       - main
       - master
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  format:
-    name: Format guard
+  changes:
+    name: Detect changed areas
     runs-on: ubuntu-latest
+    outputs:
+      ci: ${{ steps.filter.outputs.ci }}
+      docs: ${{ steps.filter.outputs.docs }}
+      harmony: ${{ steps.filter.outputs.harmony }}
+      server: ${{ steps.filter.outputs.server }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check text formatting
+      - name: Detect paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            ci:
+              - '.github/**'
+              - 'scripts/ci/**'
+            docs:
+              - 'README.md'
+              - 'docs/**'
+              - 'apps/harmony/README.md'
+              - 'apps/server/README.md'
+              - 'scripts/ci/check_markdown_links.py'
+              - 'scripts/ci/check_docs_content.py'
+            harmony:
+              - 'apps/harmony/**'
+              - 'scripts/ci/check_harmony_routes.py'
+            server:
+              - 'apps/server/**'
+              - 'deploy/**'
+
+  format:
+    name: Repository text format
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.docs == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check repository text formatting
         uses: ./.github/actions/check-format
 
-  docs:
-    name: Docs and links
+  docs-required:
+    name: Docs required files and local links
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.docs == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Check repository docs
         uses: ./.github/actions/check-docs
+
+  docs-external-links:
+    name: External Markdown links advisory
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.docs == 'true'
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Check external Markdown links
         uses: lycheeverse/lychee-action@v2
@@ -42,21 +95,51 @@ jobs:
             --accept 200,204,206,301,302,429
             './**/*.md'
 
-  server:
-    name: Java server
+  server-compile:
+    name: Java server compile
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.server == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and test server
+      - name: Compile server without tests
         uses: ./.github/actions/build-server
         with:
           working-directory: apps/server
+          maven-goal: -DskipTests compile
 
-  harmony:
-    name: Harmony client structure
+  server-tests:
+    name: Java server tests
     runs-on: ubuntu-latest
+    needs:
+      - changes
+      - server-compile
+    if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.server == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run server tests
+        uses: ./.github/actions/build-server
+        with:
+          working-directory: apps/server
+          maven-goal: test
+
+      - name: Upload server test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-surefire-reports
+          path: apps/server/target/surefire-reports
+          if-no-files-found: ignore
+
+  harmony-structure:
+    name: Harmony client structure and routes
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.harmony == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,3 +148,34 @@ jobs:
         uses: ./.github/actions/check-harmony
         with:
           working-directory: apps/harmony
+
+  ci-summary:
+    name: CI summary
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+      - format
+      - docs-required
+      - docs-external-links
+      - server-compile
+      - server-tests
+      - harmony-structure
+    if: always()
+    steps:
+      - name: Summarize
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Changed areas:"
+          echo "  ci=${{ needs.changes.outputs.ci }}"
+          echo "  docs=${{ needs.changes.outputs.docs }}"
+          echo "  harmony=${{ needs.changes.outputs.harmony }}"
+          echo "  server=${{ needs.changes.outputs.server }}"
+          echo
+          echo "Job results:"
+          echo "  format=${{ needs.format.result }}"
+          echo "  docs-required=${{ needs.docs-required.result }}"
+          echo "  docs-external-links=${{ needs.docs-external-links.result }}"
+          echo "  server-compile=${{ needs.server-compile.result }}"
+          echo "  server-tests=${{ needs.server-tests.result }}"
+          echo "  harmony-structure=${{ needs.harmony-structure.result }}"

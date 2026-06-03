@@ -94,3 +94,7 @@ runs:
             throw "HarmonyOS source layer has no source files: $layer"
           }
         }
+
+    - name: Check routes and service barrels
+      shell: bash
+      run: python3 scripts/ci/check_harmony_routes.py

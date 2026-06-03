@@ -6,6 +6,10 @@ inputs:
     description: Directory containing the server Maven project.
     required: false
     default: apps/server
+  maven-goal:
+    description: Maven goal or phase to run.
+    required: false
+    default: verify
 
 runs:
   using: composite
@@ -21,4 +25,4 @@ runs:
     - name: Run Maven verification
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: mvn --batch-mode verify
+      run: mvn --batch-mode ${{ inputs.maven-goal }}
