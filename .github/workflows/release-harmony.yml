@@ -35,7 +35,11 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           if ('${{ github.ref_type }}' -eq 'tag') {
-            "RELEASE_VERSION=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_ENV -Append
+            $tagName = '${{ github.ref_name }}'
+            if ($tagName -notmatch '^v(?<version>\d+\.\d+\.\d+)$') {
+              throw "Harmony release tag must match vMAJOR.MINOR.PATCH, got: $tagName"
+            }
+            "RELEASE_VERSION=$($Matches.version)" | Out-File -FilePath $env:GITHUB_ENV -Append
             "RELEASE_TAG=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_ENV -Append
             "IS_DEV_RELEASE=false" | Out-File -FilePath $env:GITHUB_ENV -Append
           } else {
@@ -43,6 +47,33 @@ jobs:
             "RELEASE_TAG=dev" | Out-File -FilePath $env:GITHUB_ENV -Append
             "IS_DEV_RELEASE=true" | Out-File -FilePath $env:GITHUB_ENV -Append
           }
+
+      - name: Sync HarmonyOS app version from tag
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:RELEASE_VERSION
+          if ($version -notmatch '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$') {
+            throw "Invalid release version: $version"
+          }
+          $major = [int]$Matches.major
+          $minor = [int]$Matches.minor
+          $patch = [int]$Matches.patch
+          if ($major -gt 999 -or $minor -gt 999 -or $patch -gt 999) {
+            throw "Version parts must be <= 999 for HarmonyOS versionCode mapping: $version"
+          }
+          $versionCode = ($major * 1000000) + ($minor * 1000) + $patch
+          if ($versionCode -le 0) {
+            throw "HarmonyOS versionCode must be positive: $versionCode"
+          }
+
+          $appJsonPath = 'apps/harmony/AppScope/app.json5'
+          $content = Get-Content -LiteralPath $appJsonPath -Raw
+          $content = $content -replace '"versionCode"\s*:\s*\d+', """versionCode"": $versionCode"
+          $content = $content -replace '"versionName"\s*:\s*"[^"]+"', """versionName"": ""$version"""
+          Set-Content -LiteralPath $appJsonPath -Value $content -NoNewline
+          Write-Host "Synced HarmonyOS app versionName=$version versionCode=$versionCode"
 
       - name: Check HarmonyOS client structure
         uses: ./.github/actions/check-harmony
