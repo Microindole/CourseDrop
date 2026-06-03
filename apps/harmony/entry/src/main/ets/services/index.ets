@@ -28,6 +28,41 @@ export type { AppSettings, CachePolicy, SettingsRepository } from './settings';
 export { cameraScanService, CameraScanService, qrPayloadParser, scanDispatchService, QrPayloadParser, ScanDispatchService } from './scan';
 export type { CameraScanResult, QrPayload, QrPayloadType, ScanDispatchResult } from './scan';
 export {
+  DefaultGroupMessageService,
+  DefaultGroupService,
+  PendingGroupCryptoService,
+  PendingGroupNetworkContract,
+  RuntimeLocalGroupMemberRepository,
+  RuntimeLocalGroupMessageRepository,
+  RuntimeLocalGroupRepository,
+  groupCryptoService,
+  groupMessageService,
+  groupNetworkContract,
+  groupService,
+  localGroupMemberRepository,
+  localGroupMessageRepository,
+  localGroupRepository
+} from './group';
+export type {
+  CreateGroupCommand,
+  GroupCryptoService,
+  GroupEncryptedPayload,
+  GroupFileDownloadRequest,
+  GroupFileDownloadResponse,
+  GroupFileUploadRequest,
+  GroupFileUploadResponse,
+  GroupMessageService,
+  GroupMetadataEncryptionResult,
+  GroupNetworkContract,
+  GroupService,
+  JoinGroupCommand,
+  LocalGroupMemberRepository,
+  LocalGroupMessageRepository,
+  LocalGroupRepository,
+  ReceiveGroupFileCommand,
+  SendGroupFileMessageCommand
+} from './group';
+export {
   AgentExecutor,
   AiConversationFactory,
   AiMessageFactory,

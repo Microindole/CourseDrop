@@ -16,16 +16,19 @@ public class CleanupService {
     private final RoomRepository roomRepository;
     private final LocalFileStorageService storageService;
     private final ShareService shareService;
+    private final GroupService groupService;
 
     public CleanupService(
             TransferItemRepository transferItemRepository,
             RoomRepository roomRepository,
             LocalFileStorageService storageService,
-            ShareService shareService) {
+            ShareService shareService,
+            GroupService groupService) {
         this.transferItemRepository = transferItemRepository;
         this.roomRepository = roomRepository;
         this.storageService = storageService;
         this.shareService = shareService;
+        this.groupService = groupService;
     }
 
     @Scheduled(fixedDelayString = "PT30M")
@@ -36,13 +39,19 @@ public class CleanupService {
                 .forEach(item -> storageService.deleteIfExists(item.storageKey()));
         transferItemRepository.deleteExpired(now);
         shareService.cleanupExpired(now);
-        cleanupOrphanShareFiles();
+        groupService.cleanupExpired(now);
+        cleanupOrphanFiles();
         roomRepository.deleteExpired(now);
     }
 
-    private void cleanupOrphanShareFiles() {
+    private void cleanupOrphanFiles() {
         var referencedKeys = new HashSet<String>();
+        transferItemRepository.findAll().stream()
+                .filter(item -> item.storageKey() != null)
+                .map(item -> item.storageKey())
+                .forEach(referencedKeys::add);
         shareService.listReferencedStorageKeys().forEach(referencedKeys::add);
+        groupService.listReferencedStorageKeys().forEach(referencedKeys::add);
         storageService.listStorageKeys().stream()
                 .filter(key -> !referencedKeys.contains(key))
                 .forEach(storageService::deleteIfExists);

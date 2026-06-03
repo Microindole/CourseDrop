@@ -25,6 +25,7 @@ public class DatabaseMigrationService {
         run(1, "create base relay schema", this::createBaseSchema);
         run(2, "add security and encryption metadata", this::addSecurityColumns);
         run(3, "add explicit share download policy", this::addDownloadPolicy);
+        run(4, "create group transfer schema", this::createGroupSchema);
     }
 
     private void run(int version, String description, Runnable migration) {
@@ -167,6 +168,81 @@ public class DatabaseMigrationService {
                   else 'PUBLIC'
                 end
                 where download_policy is null or download_policy = ''
+                """);
+    }
+
+    private void createGroupSchema() {
+        jdbcTemplate.execute("""
+                create table if not exists group_sessions (
+                  id text primary key,
+                  encrypted_name text not null,
+                  name_iv text not null,
+                  name_auth_tag text not null,
+                  creator_id text not null,
+                  status text not null,
+                  config_json text not null,
+                  created_at text not null
+                )
+                """);
+        jdbcTemplate.execute("""
+                create table if not exists group_members (
+                  id text primary key,
+                  group_id text not null,
+                  fingerprint_id text not null,
+                  role text not null,
+                  status text not null,
+                  joined_at text not null,
+                  left_at text,
+                  foreign key(group_id) references group_sessions(id),
+                  foreign key(fingerprint_id) references device_fingerprints(id)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create unique index if not exists idx_group_members_group_fingerprint
+                on group_members(group_id, fingerprint_id)
+                """);
+        jdbcTemplate.execute("""
+                create table if not exists group_messages (
+                  id text primary key,
+                  group_id text not null,
+                  sender_id text not null,
+                  type text not null,
+                  iv text not null,
+                  auth_tag text not null,
+                  encrypted_payload text not null,
+                  created_at text not null,
+                  foreign key(group_id) references group_sessions(id),
+                  foreign key(sender_id) references device_fingerprints(id)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create index if not exists idx_group_messages_group_created
+                on group_messages(group_id, created_at)
+                """);
+        jdbcTemplate.execute("""
+                create table if not exists group_files (
+                  id text primary key,
+                  group_id text not null,
+                  uploader_id text not null,
+                  storage_key text not null,
+                  content_type text,
+                  size_bytes integer not null,
+                  encrypted integer not null,
+                  encryption_algorithm text,
+                  kdf_algorithm text,
+                  kdf_salt text,
+                  nonce text,
+                  sha256 text,
+                  plain_size_bytes integer,
+                  created_at text not null,
+                  expires_at text not null,
+                  foreign key(group_id) references group_sessions(id),
+                  foreign key(uploader_id) references device_fingerprints(id)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create index if not exists idx_group_files_group_created
+                on group_files(group_id, created_at)
                 """);
     }
 

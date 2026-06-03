@@ -310,6 +310,140 @@ GET /api/shares/{shareId}/audit
 
 用于排查分享过期、撤回或清理失败原因。审计不返回文件内容。
 
+## 群组文件流
+
+群组接口用于 Telegram 式的加密群组文件投递。第一版只中继群组元数据和密文消息，服务器不保存群名明文、消息明文或群组密钥。
+
+### 创建群组
+
+```text
+POST /api/groups
+```
+
+请求体：
+
+```json
+{
+  "encryptedName": "base64url-ciphertext",
+  "nameIv": "base64url-iv",
+  "nameAuthTag": "base64url-tag",
+  "creatorId": "device-fingerprint-id",
+  "configJson": "{\"allowText\":false,\"expiryHours\":24,\"maxFileSizeMb\":100}"
+}
+```
+
+### 获取群组密文元数据
+
+```text
+GET /api/groups/{groupId}
+```
+
+返回密文群名、创建者、状态和配置 JSON。群组密钥必须来自邀请链接 fragment 或本地安全存储，不会由服务端返回。
+
+### 加入和退出群组
+
+```text
+POST /api/groups/{groupId}/join
+DELETE /api/groups/{groupId}/members/me
+```
+
+加入请求体：
+
+```json
+{
+  "fingerprintId": "device-fingerprint-id"
+}
+```
+
+退出请求头：
+
+```text
+X-CourseDrop-Fingerprint-Id: device-fingerprint-id
+```
+
+### 发送密文群组消息
+
+```text
+POST /api/groups/{groupId}/messages
+```
+
+请求体：
+
+```json
+{
+  "id": "client-message-uuid",
+  "senderId": "device-fingerprint-id",
+  "type": "FILE",
+  "iv": "payload-iv",
+  "authTag": "payload-auth-tag",
+  "encryptedPayload": "payload-ciphertext"
+}
+```
+
+### 同步群组消息
+
+```text
+GET /api/groups/{groupId}/messages?after={cursor}
+```
+
+请求头：
+
+```text
+X-CourseDrop-Fingerprint-Id: device-fingerprint-id
+```
+
+返回：
+
+```json
+{
+  "messages": [],
+  "nextCursor": "2026-06-03T09:00:00Z"
+}
+```
+
+`after` 当前使用消息创建时间作为同步 cursor。后续如果需要更强顺序保证，可迁移为服务端递增序号。
+
+### 上传群组密文文件
+
+```text
+POST /api/groups/{groupId}/files
+Content-Type: multipart/form-data
+```
+
+请求头：
+
+```text
+X-CourseDrop-Fingerprint-Id: device-fingerprint-id
+```
+
+表单字段：
+
+- `file`：密文文件
+- `encrypted`：是否端到端加密，默认 `true`
+- `encryptionAlgorithm`：加密算法，`encrypted=true` 时必填
+- `kdfAlgorithm`：密钥派生算法，`encrypted=true` 时必填
+- `kdfSalt`：密钥派生 salt，`NONE-RAW-KEY` 可为空
+- `nonce`：文件加密 nonce/iv 与认证标签
+- `sha256`：密文文件摘要
+- `plainSizeBytes`：明文大小
+- `expiryHours`：文件 TTL，可选，默认使用服务端 `file-ttl-hours`
+
+服务器只保存密文文件和必要元数据，不保存文件名明文或文件密钥。文件名、MIME、file key 等面向用户的载荷应放入群组密文消息 `encryptedPayload`。
+
+### 下载群组密文文件
+
+```text
+GET /api/groups/{groupId}/files/{fileId}/download
+```
+
+请求头：
+
+```text
+X-CourseDrop-Fingerprint-Id: device-fingerprint-id
+```
+
+只有当前群组成员可以下载。返回的是服务器保存的密文文件；客户端需要先同步对应 `FILE` 消息，解密 `encryptedPayload` 后拿到 file key，再在本地解密文件。
+
 ### 创建房间
 
 ```text

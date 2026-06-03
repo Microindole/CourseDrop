@@ -46,6 +46,13 @@ public class TransferItemRepository {
                 .toList();
     }
 
+    public List<TransferItemStored> findAll() {
+        return mapper.selectList(new LambdaQueryWrapper<TransferItemEntity>())
+                .stream()
+                .map(this::toStored)
+                .toList();
+    }
+
     public int deleteExpired(Instant now) {
         return mapper.delete(new LambdaQueryWrapper<TransferItemEntity>()
                 .lt(TransferItemEntity::getExpiresAt, now.toString()));

@@ -22,3 +22,23 @@ export type {
 } from './TransferTask';
 export type { LocalFileEntry } from './LocalFileEntry';
 export type { RelayServerConfig } from './RelayServerConfig';
+export type {
+  GroupConfig,
+  GroupControlAction,
+  GroupCreateRequest,
+  GroupCreateResponse,
+  GroupInvitePayload,
+  GroupMember,
+  GroupMemberRole,
+  GroupMemberStatus,
+  GroupMessage,
+  GroupMessageCursor,
+  GroupMessageDeliveryStatus,
+  GroupMessageSyncResult,
+  GroupMessageType,
+  GroupSession,
+  GroupStatus,
+  PlainControlPayload,
+  PlainFilePayload,
+  PlainTextPayload
+} from './Group';
