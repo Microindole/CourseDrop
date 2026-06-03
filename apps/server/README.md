@@ -1,6 +1,6 @@
 # Java 服务端
 
-CourseDrop 的 Java Spring Boot 服务端，负责公网限时中转、浏览器下载、设备指纹身份、扫码登录和过期清理。当前房间接口是早期兼容层。
+CourseDrop 的 Java Spring Boot 服务端，负责公网限时中转、浏览器下载、设备指纹身份、扫码登录、加密群组文件流和过期清理。早期房间接口仍保留为兼容层。
 
 ## 技术栈
 
@@ -26,6 +26,7 @@ common/     通用异常和错误响应
 config/     配置、数据库初始化
 
 auth/       Web 扫码登录内部会话对象
+group/      群组文件流内部记录
 share/      公网限时分享内部记录
 storage/    本地文件存储
 security/   密码哈希等安全工具
@@ -46,68 +47,64 @@ mvn spring-boot:run
 8080
 ```
 
-默认配置在：
+默认配置：
 
 ```text
 src/main/resources/application.yml
 ```
 
-## 当前已实现接口
+## 当前已实现能力
 
-- `GET /`
-- `GET /api/health`
-- `POST /api/identity/fingerprints`
-- `POST /api/accounts`
-- `GET /api/accounts/{accountId}`
-- `POST /api/accounts/{accountId}/security`
-- `POST /api/accounts/{accountId}/password`
-- `GET /api/accounts/{accountId}/fingerprints`
-- `POST /api/accounts/{accountId}/fingerprints`
-- `DELETE /api/accounts/{accountId}/fingerprints/{fingerprintId}`
-- `POST /api/auth/web-login`
-- `POST /api/auth/web-login/{loginCode}/confirm`
-- `GET /api/auth/web-login/{loginCode}`
-- `GET /api/auth/web-login/{loginCode}/qr.svg`
-- `POST /api/auth/web-login/password`
-- `POST /api/auth/web-login/logout`
-- `DELETE /api/auth/web-login/{loginCode}`
-- `GET /api/auth/web-login/sessions`
-- `POST /api/shares`
-- `GET /api/shares`
-- `GET /api/shares/{code}`
-- `POST /api/shares/{shareId}/items`
-- `GET /api/shares/{code}/items/{itemId}/download`
-- `DELETE /api/shares/{shareId}`
-- `POST /api/shares/{shareId}/expiry`
-- `DELETE /api/shares/{shareId}/items/{itemId}`
-- `GET /api/shares/{shareId}/audit`
-- `GET /api/health/capabilities`
-- `GET /s/{code}`
-- `GET /s/{code}/items/{itemId}/download`
-- `POST /api/rooms`
-- `POST /api/rooms/{code}/join`
-- `GET /api/rooms/{roomId}`
-- `GET /api/rooms/{roomId}/items`
-- `POST /api/files/upload`
-- `GET /api/files/{itemId}/download`
+- 服务首页、健康检查、能力查询和通用二维码生成。
+- 设备指纹、账号创建、账号登录绑定、账号安全设置、设备绑定和解绑。
+- Web 扫码登录、二维码、Cookie 签发、密码例外登录、退出、撤销和会话列表。
+- 公网分享创建、上传、下载、撤回、续期、删除单项、审计和管理查询。
+- 浏览器下载页 `/s/{code}`，支持扫码登录、账号密码例外登录和 WebCrypto 本地解密基础能力。
+- App 下载接口支持设备指纹或账号身份鉴权。
+- 端到端加密元数据校验：服务端只保存密文、算法、nonce/tag、hash、明文大小等，不接收 file key。
+- 群组文件流 MVP：
+  - 创建群、获取群、加入群、退出群。
+  - 发送密文消息、按 cursor 同步密文消息。
+  - 上传群组密文文件、成员下载密文文件。
+  - 非成员拒绝访问。
+  - 群组文件过期清理接入 `CleanupService`。
+- 数据库初始化使用带 `schema_migrations` 的轻量迁移服务。
+- 孤儿文件清理会保护旧版 transfer、share、group 三类 storage key。
 
-## 当前补齐情况
+## 群组接口
 
-- `/s/{code}` 下载页已接入真实 QR SVG、登录状态轮询和授权后下载按钮启用。
-- `/` 首页已接入服务状态、分享码入口、健康检查入口和服务器能力概览。
-- 分享下载策略已使用 `downloadPolicy`：`PUBLIC`、`LOGIN_REQUIRED`、`OWNER_ONLY`。
-- Web 登录会话已支持 Cookie 签发、账号密码例外登录、退出登录、撤销、会话列表。
-- 账号安全设置已支持开关账号密码登录、修改密码、绑定和解绑设备指纹。
-- 浏览器下载页已支持使用 URL fragment 中的 `#key=` 对 AES-GCM 加密文件做本地 WebCrypto 解密。
-- Web 端认证成功后可以直接把文件下载到当前电脑浏览器。
-- App 下载接口已支持设备指纹和账号身份鉴权。
-- 分享管理已支持我的分享列表、状态筛选、续期、删除单个分享项。
-- 清理任务已支持孤儿文件扫描和 `CLEANUP_FAILED` 审计。
-- 数据库初始化已收敛为带版本表的轻量迁移服务 `DatabaseMigrationService`。
-- 公网部署基础配置已包含 `secure-cookie`、CORS allowed origins 和 public base URL。
+群组接口使用 `/api/groups`：
+
+```text
+POST   /api/groups
+GET    /api/groups/{groupId}
+POST   /api/groups/{groupId}/join
+DELETE /api/groups/{groupId}/members/me
+POST   /api/groups/{groupId}/messages
+GET    /api/groups/{groupId}/messages
+POST   /api/groups/{groupId}/files
+GET    /api/groups/{groupId}/files/{fileId}/download
+```
+
+群组密钥不上传服务端。服务端只保存密文群名、密文消息、密文文件和必要元数据。
+
+## 验证
+
+当前服务端测试覆盖健康检查、分享主流程、账号安全、扫码 Cookie、加密元数据、分享管理和群组文件流。
+
+```powershell
+mvn test
+```
+
+最近验证结果：
+
+```text
+Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
 
 ## 后续增强
 
-- 端到端加密协议需要和鸿蒙客户端一起落地，包括客户端加密、解密和完整性校验。
-- 生产部署建议继续接入成熟迁移工具 Flyway 或 Liquibase。
-- 限流目前是进程内实现，生产环境可换成 Redis 或网关限流。
+- 群组消息 cursor 从 `createdAt` 升级为服务端递增序号。
+- 群组成员管理：移除成员、解散群组、密钥轮换。
+- 生产部署建议继续接入 Flyway/Liquibase、Redis 限流或网关限流。
