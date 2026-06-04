@@ -1,0 +1,24 @@
+<!-- templates/help/sidebar.html -->
+<div th:fragment="sidebar" class="w-full lg:w-64 shrink-0 lg:sticky lg:top-24 max-h-[calc(100vh-8rem)] overflow-y-auto hide-scrollbar bg-white/40 dark:bg-zinc-900/10 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4 backdrop-blur-md relative">
+  <div class="text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-500 tracking-widest px-2 mb-3 z-10 relative">目录章节</div>
+  <nav id="sidebar-nav" class="relative space-y-1 text-xs z-10">
+    <!-- 动态滑动指示器块 -->
+    <div id="sidebar-indicator" class="absolute left-0 w-full rounded-lg transition-all duration-300 pointer-events-none bg-emerald-500/5 dark:bg-emerald-500/10 border-l-2 border-emerald-500 opacity-0" style="top: 0; height: 0;"></div>
+    
+    <a href="#about" class="sidebar-link block px-3 py-2.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-all duration-200 relative">
+      01. 起源
+    </a>
+    <a href="#status" class="sidebar-link block px-3 py-2.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-all duration-200 relative">
+      02. 矩阵
+    </a>
+    <a href="#security" class="sidebar-link block px-3 py-2.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-all duration-200 relative">
+      03. 协议
+    </a>
+    <a href="#download" class="sidebar-link block px-3 py-2.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-all duration-200 relative">
+      04. 获取
+    </a>
+    <a href="#shortcuts" class="sidebar-link block px-3 py-2.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-all duration-200 relative">
+      05. 捷径
+    </a>
+  </nav>
+</div>

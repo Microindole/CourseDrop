@@ -43,6 +43,30 @@ graph TD
 - **文件与位置**：
   - [GroupNetworkContract.ets](../../apps/harmony/entry/src/main/ets/services/group/GroupNetworkContract.ets)
 
+### 1.3.1 源服务器与端到端加密边界
+
+群组功能和普通公网文件传输一样，必须建立在“用户选择的源服务器/中转服务器”之上，而不是固定写死为 CourseDrop 官方公网服务。
+
+产品约束如下：
+
+- 用户可以配置自己的源服务器，群组、消息、文件都在该源服务器上中转。
+- 服务端负责成员关系、密文消息、密文文件、过期清理和实时通知。
+- 服务端不能保存群组 key、file key、明文文件名、明文消息或明文群名。
+- 邀请链接或密钥备份负责把群组 key 安全交给成员设备。
+- 没有群组 key 的设备，即使是服务器管理员，也只能看到密文和元数据。
+
+这意味着“完全公网”和“数据自己可控”并不冲突：公网只是网络可达性，数据主权来自用户可自建源服务器，内容安全来自端到端加密。
+
+### 1.3.2 REST 与 WebSocket 分工
+
+群组不自定义私有协议，避免后续维护成本失控。
+
+- REST：可靠事实来源，负责创建群、加入群、上传密文文件、发送密文消息、按 cursor 补历史。
+- WebSocket：实时通知层，负责告诉在线成员“有新密文消息/成员事件”，客户端收到后写入本地或触发 REST 补拉。
+- 离线恢复：始终依赖 REST cursor，不依赖 WebSocket 保证消息不丢。
+
+当前服务端已提供 `/ws/groups?fingerprintId=...` 作为群组实时事件通道的基础入口。
+
 ### 1.4 本地持久化层 (Database & Repository Layer)
 - **职责**：本地数据库的读写代理。
 - **文件与位置**：
@@ -67,6 +91,8 @@ export interface GroupConfig {
   allowText: boolean;           // 是否允许发送文本（仅保留未来聊天支持）
   expiryHours: number;          // 文件的默认过期时间 (TTL)
   maxFileSizeMb: number;        // 文件大小限制
+  avatarText?: string;          // 群头像首字/标记
+  avatarColor?: string;         // 群头像主题色
 }
 
 /**
@@ -383,3 +409,32 @@ Java 服务端针对群组提供如下接口契约规范。服务器只允许保
 ├─ 2. 构建传输流程状态提示（加密中 -> 上传中 -> 成功 -> 收到 -> 解密中）
 └─ 3. 编写双端测试，验证服务器端数据库和物理存储完全不包含文件名与内容明文。
 ```
+
+## 7. 一对一会话规划
+
+一对一不建议另起一套协议。它可以作为“成员数为 2 的加密会话”建立在群组能力之上。
+
+建议的后续模型：
+
+```text
+Conversation
+  id
+  type: GROUP | DIRECT
+  encryptedName
+  avatar
+  members
+  keyMaterialRef
+
+Message
+  conversationId
+  type: TEXT | FILE | CONTROL
+  encryptedPayload
+```
+
+落地策略：
+
+- 短期：继续把群组跑通，不引入一对一入口。
+- 中期：抽象 `ConversationService`，把当前 `GroupService/GroupMessageService` 的 UI 入口泛化。
+- 长期：一对一使用相同的 REST + WebSocket + E2EE 管线，只在邀请、标题、头像和成员管理上做差异化。
+
+工期判断：如果现在就做一对一，会明显增加 UI、邀请、密钥交换和身份展示的工作量；如果先把群组封装成 conversation 模型，再接一对一，增量会小很多。因此一对一先进入规划，不进入当前迭代。

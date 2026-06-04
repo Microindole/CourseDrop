@@ -88,5 +88,13 @@ public class HomeController {
         model.addAttribute("publicBaseUrl", serverProperties.publicBaseUrl());
         return "help";
     }
+
+    @GetMapping("/console")
+    public String console(Model model) {
+        model.addAttribute("maxFileSizeMb", storageProperties.maxFileSizeMb());
+        model.addAttribute("defaultTtlHours", storageProperties.fileTtlHours());
+        model.addAttribute("publicBaseUrl", serverProperties.publicBaseUrl());
+        return "console";
+    }
 }
 

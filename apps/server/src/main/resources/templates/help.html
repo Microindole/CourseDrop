@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>使用指南 — CourseDrop</title>
+  <title>CourseDrop 在线手册 — 使用指南与全栈状态</title>
   <link rel="icon" type="image/svg+xml" th:href="@{/images/logo.svg}">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -32,7 +32,7 @@
   <link rel="stylesheet" th:href="@{/css/main.css}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600;700;800;950&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -40,6 +40,7 @@
     .font-mono-custom {
       font-family: 'JetBrains Mono', monospace;
     }
+    /* 统一手写艺术字 */
     .font-handwritten {
       font-family: 'Caveat', cursive;
       font-weight: 700;
@@ -48,6 +49,7 @@
       background-clip: text;
       -webkit-text-fill-color: transparent;
       text-fill-color: transparent;
+      filter: drop-shadow(0 2px 10px rgba(16, 185, 129, 0.15));
       display: inline-block;
       padding-right: 0.15em;
     }
@@ -57,133 +59,127 @@
       background-clip: text;
       -webkit-text-fill-color: transparent;
       text-fill-color: transparent;
+      filter: drop-shadow(0 0 20px rgba(52, 211, 153, 0.25));
+    }
+    
+    /* 侧边栏激活状态下的经典高亮 */
+    .sidebar-link {
+      border-left: 2px solid transparent;
+      transition: color 0.2s ease;
+    }
+    .sidebar-link-active {
+      color: #10b981 !important;
+      font-weight: 700;
+    }
+    
+    /* 隐藏默认滚动条但保持滚动 */
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    /* 静态终端光标 */
+    .terminal-cursor {
+      display: inline-block;
+      width: 7px;
+      height: 14px;
+      background-color: #10b981;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+    
+    /* 平滑滚动 */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* 物理级微动效控制 */
+    .icon-transition {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.2s ease;
+    }
+    /* PUBLIC 锁钩微开 */
+    .group:hover .icon-lock-hook {
+      transform: translateY(-2.5px) rotate(-15deg);
+      transform-origin: 14px 10px;
+    }
+    /* LOGIN_REQUIRED 锁及钥匙孔微动 */
+    .group:hover .icon-key {
+      transform: translateY(-2px);
+    }
+    /* OWNER_ONLY 安全盾牌缩放 */
+    .group:hover .icon-shield {
+      transform: scale(1.08);
+      transform-origin: center;
+    }
+    /* 按钮物理动画 */
+    .btn-hover-bounce:hover .btn-icon {
+      transform: translateY(2px);
+    }
+    .btn-hover-spin:hover .btn-icon {
+      transform: rotate(10deg) scale(1.05);
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 antialiased bg-grid-pattern relative overflow-x-hidden pb-12 transition-all-300">
 
-<!-- 极光背景 -->
-<div class="absolute top-0 left-1/2 -translate-x-1/2 -z-10 h-[500px] w-[500px] rounded-full bg-emerald-500/10 dark:bg-emerald-500/5 blur-[120px] mix-blend-screen animate-glow pointer-events-none"></div>
+<!-- 静态浅晕染背景，去除AI化流光 -->
+<div class="absolute top-[-5%] left-[25%] -z-10 h-[380px] w-[380px] rounded-full bg-emerald-500/5 dark:bg-emerald-500/3 blur-[90px] pointer-events-none"></div>
+<div class="absolute bottom-[25%] right-[-5%] -z-10 h-[320px] w-[320px] rounded-full bg-blue-500/5 dark:bg-blue-500/2 blur-[80px] pointer-events-none"></div>
 
 <!-- 顶部导航 -->
-<nav class="mx-auto w-full max-w-4xl px-6 pt-6 flex justify-between items-center shrink-0">
-  <a href="/" class="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 px-4 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 backdrop-blur-md shadow-sm hover:text-zinc-900 dark:hover:text-white transition duration-200">
-    <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
-    返回首页
-  </a>
-
-  <!-- 主题切换 -->
-  <button id="theme-toggle" onclick="toggleTheme(event)" class="inline-flex items-center gap-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 p-2 text-zinc-500 dark:text-zinc-400 backdrop-blur-md shadow-sm hover:text-zinc-900 dark:hover:text-white transition duration-200">
-    <svg id="theme-toggle-light-icon" class="hidden w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-    <svg id="theme-toggle-dark-icon" class="hidden w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-  </button>
-</nav>
-
-<!-- 主页面 (拓宽至 max-w-3xl 并解除居中限制以呈现标准阅读流) -->
-<main class="mx-auto w-full max-w-3xl px-6 flex flex-col flex-grow py-8 md:py-16 text-left opacity-0">
-  <div class="w-full glass-card rounded-2xl p-8 sm:p-12 shadow-xl border border-zinc-200/50 dark:border-zinc-800/80">
-    
-    <div class="flex items-center gap-3 border-b border-zinc-200/60 dark:border-zinc-800/80 pb-5 mb-8">
-      <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+<header class="w-full shrink-0 border-b border-zinc-200/50 dark:border-zinc-800/40 bg-white/60 dark:bg-zinc-950/60 backdrop-blur-lg sticky top-0 z-50 transition-all duration-300">
+  <div class="mx-auto w-full max-w-7xl px-6 h-16 flex items-center justify-between">
+    <!-- 左侧 Logo & Title -->
+    <a href="/" class="flex items-center gap-3 group">
+      <!-- 载入项目原生的 logo.svg -->
+      <img th:src="@{/images/logo.svg}" class="w-7 h-7 rounded-lg shadow-sm" alt="CourseDrop Logo">
+      <div class="flex flex-col">
+        <span class="font-handwritten text-2xl tracking-tight leading-none py-0.5">CourseDrop</span>
+        <span class="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold font-mono-custom tracking-wider leading-none mt-0.5">ONLINE MANUAL</span>
       </div>
-      <div>
-        <h1 class="text-xl font-extrabold text-zinc-900 dark:text-white tracking-tight">使用指南</h1>
-        <p class="text-xs text-zinc-400 dark:text-zinc-500 font-semibold mt-0.5">了解 CourseDrop 的工作方式与安全特性</p>
-      </div>
+    </a>
+
+    <!-- 右侧返回首页 & 主题按钮 -->
+    <div class="flex items-center gap-3">
+      <a href="/" class="inline-flex items-center gap-1.5 rounded-full border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 px-4 py-1.5 text-xs font-bold text-zinc-600 dark:text-zinc-300 shadow-sm hover:text-zinc-950 dark:hover:text-white transition duration-200">
+        <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+        门户主页
+      </a>
+      <button id="theme-toggle" onclick="toggleTheme(event)" class="rounded-full border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 p-2.5 text-zinc-500 dark:text-zinc-400 shadow-sm hover:text-zinc-900 dark:hover:text-white transition-all duration-200">
+        <svg id="theme-toggle-light-icon" class="hidden w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+        <svg id="theme-toggle-dark-icon" class="hidden w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+      </button>
     </div>
-
-    <div class="space-y-8 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-      
-      <!-- 什么是限时中转 -->
-      <div class="pb-6 border-b border-zinc-100 dark:border-zinc-900/60">
-        <h3 class="font-extrabold text-sm text-zinc-900 dark:text-white flex items-center gap-2 mb-2.5">
-          <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-          什么是限时文件中转？
-        </h3>
-        <p class="pl-4 text-zinc-600 dark:text-zinc-400">
-          中转文件是通过高级加密算法临时保存在服务器上的。一旦到达设定的过期时间，或被所有者手动点击“撤销”，中转文件将从服务器的存储介质上进行**物理粉碎删除**，不可找回，确保数据隐私安全。
-        </p>
-      </div>
-
-      <!-- 服务限制 -->
-      <div class="pb-6 border-b border-zinc-100 dark:border-zinc-900/60">
-        <h3 class="font-extrabold text-sm text-zinc-900 dark:text-white flex items-center gap-2 mb-2.5">
-          <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-          服务限制规则
-        </h3>
-        <ul class="list-disc list-inside pl-4 space-y-2 font-medium">
-          <li>单文件体积上限：<span class="font-mono-custom font-bold text-emerald-600 dark:text-emerald-400" th:text="${maxFileSizeMb} + ' MB'">512 MB</span></li>
-          <li>默认存储有效期：<span class="font-mono-custom font-bold text-emerald-600 dark:text-emerald-400" th:text="${defaultTtlHours} + ' 小时'">24 小时</span></li>
-          <li>支持端到端加密传输（网页端本地基于 WebCrypto 流式解密）</li>
-        </ul>
-      </div>
-
-      <!-- 安全策略 -->
-      <div class="pb-6 border-b border-zinc-100 dark:border-zinc-900/60">
-        <h3 class="font-extrabold text-sm text-zinc-900 dark:text-white flex items-center gap-2 mb-3">
-          <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-          安全提取策略定义
-        </h3>
-        <div class="pl-4 space-y-4">
-          <div class="flex items-start gap-3">
-            <div class="p-1 rounded bg-emerald-500/10 text-emerald-500 shrink-0 mt-0.5">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h16.5a1.5 1.5 0 001.5-1.5V12a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 12v8.25a1.5 1.5 0 001.5 1.5z" /></svg>
-            </div>
-            <div>
-              <strong class="text-zinc-800 dark:text-zinc-200">公开提取 (PUBLIC)</strong>
-              <p class="text-xs text-zinc-400 dark:text-zinc-500 mt-1">任何获取到该通道分享码的客户端都可免登录直接提取并解密下载。</p>
-            </div>
-          </div>
-          <div class="flex items-start gap-3">
-            <div class="p-1 rounded bg-amber-500/10 text-amber-500 shrink-0 mt-0.5">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a1.5 1.5 0 001.5-1.5v-6a1.5 1.5 0 00-1.5-1.5H6.25A1.5 1.5 0 004.75 12v6a1.5 1.5 0 001.5 1.5z" /></svg>
-            </div>
-            <div>
-              <strong class="text-zinc-800 dark:text-zinc-200">限时锁屏 (LOGIN_REQUIRED)</strong>
-              <p class="text-xs text-zinc-400 dark:text-zinc-500 mt-1">浏览器端必须通过手机客户端扫码，或者使用绑定的账号密码验证登录后，方可解锁提取通道。</p>
-            </div>
-          </div>
-          <div class="flex items-start gap-3">
-            <div class="p-1 rounded bg-rose-500/10 text-rose-500 shrink-0 mt-0.5">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg>
-            </div>
-            <div>
-              <strong class="text-zinc-800 dark:text-zinc-200">仅所有者 (OWNER_ONLY)</strong>
-              <p class="text-xs text-zinc-400 dark:text-zinc-500 mt-1">该提取码仅限发出分享的设备指纹或者该设备所绑定的主账户下的关联设备提取，其他设备无法解锁。</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 极客快捷指令 -->
-      <div class="pt-4 border-t border-zinc-200/50 dark:border-zinc-800/80">
-        <h3 class="font-bold text-zinc-900 dark:text-white flex items-center gap-2 mb-2">
-          <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-          极客快捷快捷跳转指令
-        </h3>
-        <p class="pl-4 mb-2">
-          本站搜索框支持命令行风格的快捷指令。在首页提取输入框中，以 <code class="font-mono-custom bg-zinc-200/60 dark:bg-zinc-900 px-1.5 py-0.5 rounded text-emerald-600 dark:text-emerald-400 font-bold text-xs">!</code> 开头输入对应路径即可一键直达隐藏调试或检测页面：
-        </p>
-        <ul class="list-none pl-4 space-y-1.5 text-xs font-mono-custom">
-          <li><span class="bg-zinc-200/50 dark:bg-zinc-900 px-1.5 py-0.5 rounded font-bold text-zinc-800 dark:text-zinc-300">!/health</span> &rarr; 直达后端运行健康状态检测</li>
-          <li><span class="bg-zinc-200/50 dark:bg-zinc-900 px-1.5 py-0.5 rounded font-bold text-zinc-800 dark:text-zinc-300">!/caps</span> &rarr; 直达后端服务核心能力清单</li>
-        </ul>
-      </div>
-
-    </div>
-
   </div>
+</header>
+
+<!-- 主页面容器：双栏布局 -->
+<main class="mx-auto w-full max-w-7xl px-6 flex flex-col lg:flex-row flex-grow py-8 gap-8 items-start opacity-0 z-10">
+
+  <!-- 1. 引入左侧目录导航组件 -->
+  <aside th:replace="~{help/sidebar :: sidebar}"></aside>
+
+  <!-- 2. 右侧文档阅读区域 -->
+  <div class="flex-grow w-full max-w-4xl space-y-12">
+    <!-- 引入前四章节组件 -->
+    <div th:replace="~{help/chapters :: chapters}"></div>
+    <!-- 引入极客终端组件 -->
+    <div th:replace="~{help/terminal :: terminal}"></div>
+  </div>
+
 </main>
 
-<!-- 页脚 (提供单元测试断言的调试链接) -->
-<footer class="mx-auto w-full max-w-4xl px-6 text-center shrink-0 border-t border-zinc-200/30 dark:border-zinc-900/50 pt-4">
+<!-- 页脚 -->
+<footer class="mx-auto w-full max-w-7xl px-6 text-center shrink-0 border-t border-zinc-200/20 dark:border-zinc-900/40 pt-6 mt-12">
   <div class="flex items-center justify-between text-[10px] text-zinc-400 dark:text-zinc-600 font-mono-custom">
     <span>CourseDrop Node &middot; Guide</span>
-    <div class="space-x-2">
-      <a href="/api/health" class="hover:underline">/health</a>
+    <div class="space-x-3">
+      <a href="/api/health" class="hover:underline hover:text-emerald-500 transition-colors">/health</a>
       <span>&middot;</span>
-      <a href="/api/health/capabilities" class="hover:underline">/caps</a>
+      <a href="/api/health/capabilities" class="hover:underline hover:text-emerald-500 transition-colors">/caps</a>
     </div>
   </div>
 </footer>
@@ -203,7 +199,7 @@
   }
   updateIcons();
 
-  // 波纹式暗黑模式切换逻辑 (startViewTransition API)
+  // 暗黑模式切换
   function toggleTheme(event) {
     const isDark = document.documentElement.classList.contains('dark');
     
@@ -221,7 +217,6 @@
       Math.max(y, window.innerHeight - y)
     );
 
-    // 设置 CSS 变量，传参给 CSS 动画
     document.documentElement.style.setProperty('--clip-x', `${x}px`);
     document.documentElement.style.setProperty('--clip-y', `${y}px`);
     document.documentElement.style.setProperty('--clip-radius', `${endRadius}px`);
@@ -233,40 +228,145 @@
     });
   }
 
+  // 极客终端交互指令运行逻辑
+  function runCommand(cmd) {
+    const outputDiv = document.getElementById("terminal-output");
+    const contentPre = document.getElementById("output-content");
+    const statusSpan = document.getElementById("output-status");
+    
+    if (cmd === "!/clear") {
+      outputDiv.classList.add("hidden");
+      contentPre.textContent = "";
+      return;
+    }
+    
+    const startTime = performance.now();
+    let url = "";
+    
+    if (cmd === "!/health") {
+      url = "/api/health";
+    } else if (cmd === "!/caps") {
+      url = "/api/health/capabilities";
+    } else if (cmd === "!/api/shares") {
+      url = "/api/shares?status=ACTIVE";
+    } else if (cmd === "!/env") {
+      // 动态获取 Thymeleaf 参数拼装的变量和客户端信息
+      const maxFileSizeMb = "[[${maxFileSizeMb}]]";
+      const defaultTtlHours = "[[${defaultTtlHours}]]";
+      const envData = {
+        publicBaseUrl: window.location.origin,
+        maxFileSize: maxFileSizeMb ? `${maxFileSizeMb} MB` : "100 MB",
+        defaultTtlHours: defaultTtlHours ? `${defaultTtlHours} 小时` : "168 小时",
+        clientScheme: "coursedrop://",
+        userAgent: navigator.userAgent
+      };
+      outputDiv.classList.remove("hidden");
+      statusSpan.textContent = "SUCCESS (LOCAL)";
+      statusSpan.className = "text-amber-500 font-bold";
+      contentPre.textContent = JSON.stringify(envData, null, 2);
+      return;
+    } else if (cmd === "!/info") {
+      const infoData = {
+        nodeName: "coursedrop-node-0",
+        backendStack: "Java 17 / Spring Boot 3 / MyBatis-Plus",
+        databaseType: "SQLite 3",
+        frontendStack: "Thymeleaf 3 / Tailwind CSS 3.4 CDN",
+        artisticFonts: "Caveat / Inter / JetBrains Mono",
+        license: "Apache-2.0 License"
+      };
+      outputDiv.classList.remove("hidden");
+      statusSpan.textContent = "SUCCESS (LOCAL)";
+      statusSpan.className = "text-amber-500 font-bold";
+      contentPre.textContent = JSON.stringify(infoData, null, 2);
+      return;
+    }
+    
+    statusSpan.textContent = "RUNNING...";
+    statusSpan.className = "text-zinc-500 font-bold";
+    outputDiv.classList.remove("hidden");
+    
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        const duration = Math.round(performance.now() - startTime);
+        statusSpan.textContent = `SUCCESS (${duration}ms)`;
+        statusSpan.className = "text-emerald-500 font-bold";
+        contentPre.textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(err => {
+        statusSpan.textContent = "FAILED";
+        statusSpan.className = "text-rose-500 font-bold";
+        contentPre.textContent = `Error: ${err.message}`;
+      });
+  }
+
   // 苹果风页面平滑转场及同源链接拦截
-  document.addEventListener("DOMContentLoaded", () => {
+  window.addEventListener("pageshow", () => {
     const mainEl = document.querySelector("main");
     if (mainEl) {
-      // 渐显进入
-      mainEl.classList.remove("opacity-0");
+      // 每次页面展示（包括后退缓存载入）都重置进入转场
+      mainEl.classList.remove("apple-transition-exit", "opacity-0");
       mainEl.classList.add("apple-transition-enter");
     }
 
-    // 拦截同源超链接点击，执行退出动画后再跳转
-    document.addEventListener("click", (e) => {
-      const anchor = e.target.closest("a");
-      if (!anchor) return;
-      
-      const url = anchor.getAttribute("href");
-      if (!url) return;
+    // 自动运行通过 URL 传过来的极客快捷命令
+    const urlParams = new URLSearchParams(window.location.search);
+    const runCmd = urlParams.get("run");
+    if (runCmd) {
+      setTimeout(() => {
+        runCommand(`!/${runCmd}`);
+      }, 300); // 延时执行以确保 DOM 已完成最终渲染布局
+    }
+  });
 
-      // 排除锚点、新窗口打开及外部链接
-      const isAnchor = url.startsWith("#");
-      const isExternal = url.startsWith("http://") || url.startsWith("https://") || url.startsWith("//");
-      const isNewTab = anchor.getAttribute("target") === "_blank";
-      const isMailOrTel = url.startsWith("mailto:") || url.startsWith("tel:");
-      
-      if (!isAnchor && !isExternal && !isNewTab && !isMailOrTel) {
-        e.preventDefault();
-        if (mainEl) {
-          mainEl.classList.remove("apple-transition-enter");
-          mainEl.classList.add("apple-transition-exit");
-        }
-        setTimeout(() => {
-          window.location.href = url;
-        }, 150); // 配合 150ms 的 exit 动画
+  document.addEventListener("DOMContentLoaded", () => {
+    const mainEl = document.querySelector("main");
+
+    // ScrollSpy 滚动监听与左侧目录高亮逻辑，包含滑动背景指示器逻辑
+    const sections = document.querySelectorAll("section");
+    const sidebarLinks = document.querySelectorAll(".sidebar-link");
+    const indicator = document.getElementById("sidebar-indicator");
+
+    function updateIndicator(activeLink) {
+      if (activeLink) {
+        indicator.style.top = `${activeLink.offsetTop}px`;
+        indicator.style.height = `${activeLink.offsetHeight}px`;
+        indicator.style.opacity = "1";
+      } else {
+        indicator.style.opacity = "0";
       }
-    });
+    }
+
+    function scrollSpy() {
+      let currentSectionId = "";
+      sections.forEach((section) => {
+        const sectionTop = section.offsetTop;
+        if (window.scrollY >= sectionTop - 180) {
+          currentSectionId = section.getAttribute("id");
+        }
+      });
+
+      let activeLink = null;
+      sidebarLinks.forEach((link) => {
+        link.classList.remove("sidebar-link-active");
+        const href = link.getAttribute("href");
+        if (href === `#${currentSectionId}`) {
+          link.classList.add("sidebar-link-active");
+          activeLink = link;
+        }
+      });
+
+      updateIndicator(activeLink);
+    }
+
+    window.addEventListener("scroll", scrollSpy);
+    window.addEventListener("resize", scrollSpy);
+    
+    // 初始化高亮状态，由于 offsetTop 渲染需要时间，延迟执行一次
+    setTimeout(scrollSpy, 100);
   });
 </script>
 </body>

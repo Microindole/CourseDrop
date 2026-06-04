@@ -1,6 +1,14 @@
 # WebSocket 事件草案
 
-WebSocket 不在第一阶段实现，先保留事件设计。
+WebSocket 是实时通知层，不是可靠消息存储层。可靠历史仍由 REST cursor 同步保证。
+
+当前群组实时入口：
+
+```text
+GET /ws/groups?fingerprintId={fingerprintId}
+```
+
+连接建立后，服务端按 `fingerprintId` 维护在线会话。发送群组消息时，服务端向群成员在线连接广播密文事件。
 
 ## 客户端发送
 
@@ -34,6 +42,33 @@ WebSocket 不在第一阶段实现，先保留事件设计。
 
 ## 服务端发送
 
+### GROUP_MESSAGE_CREATED
+
+群组内出现新的密文消息。
+
+```json
+{
+  "type": "GROUP_MESSAGE_CREATED",
+  "groupId": "group-id",
+  "payload": {
+    "id": "message-id",
+    "groupId": "group-id",
+    "senderId": "fingerprint-id",
+    "type": "FILE",
+    "iv": "payload-iv",
+    "authTag": "payload-tag",
+    "encryptedPayload": "ciphertext",
+    "createdAt": "2026-06-04T08:00:00Z"
+  }
+}
+```
+
+客户端处理策略：
+
+- 如果本地持有该群组 key，则保存密文消息并刷新 UI。
+- 如果事件丢失或客户端离线，则下次进入会话时通过 REST cursor 补拉。
+- WebSocket 事件不包含明文内容、群组 key 或 file key。
+
 ### room_member_joined
 
 有设备加入房间。
@@ -49,4 +84,3 @@ WebSocket 不在第一阶段实现，先保留事件设计。
 ### room_expiring
 
 房间即将过期。
-

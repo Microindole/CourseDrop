@@ -1,0 +1,284 @@
+<!-- templates/help/chapters.html -->
+<div th:fragment="chapters" class="space-y-12">
+
+  <!-- 第一章：起源 -->
+  <section id="about" class="scroll-mt-24 space-y-6">
+    <div class="flex items-baseline gap-3 border-b border-zinc-200/40 dark:border-zinc-800/40 pb-2">
+      <span class="font-handwritten text-3xl leading-none">Chapter 01</span>
+      <h2 class="text-xl font-extrabold text-zinc-900 dark:text-white">起源</h2>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6 sm:p-8 border border-zinc-200/50 dark:border-zinc-800/80 space-y-5">
+      <p class="text-sm text-zinc-650 dark:text-zinc-400 leading-relaxed">
+        CourseDrop 是一款<strong>本地优先的加密中转流传工具</strong>。我们坚持完全开源与去中心化部署的核心路线。与绑定特定商业云盘的工具不同，CourseDrop 的设计理念是<strong>彻底杜绝任何形式的中心化隐私收集与服务绑定</strong>。
+      </p>
+
+      <!-- 特色卡片：自建节点与自主掌控 -->
+      <div class="p-5 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.01] space-y-2">
+        <h4 class="font-bold text-xs font-mono-custom text-emerald-500 uppercase tracking-wider">自建节点 &middot; 数据自主掌控</h4>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+          CourseDrop 赋予了用户**完全的节点自治权**。您可以随时在自己的局域网、私有云或轻量物理机上一键自部署 CourseDrop 服务端。中转数据完全驻留在您自己掌控的本地硬件介质中，到期后底层物理粉碎，免受第三方数据挖掘或隐私窥探。
+        </p>
+      </div>
+
+      <!-- 开源卡片与纯 SVG 图标按钮组 -->
+      <div class="border border-zinc-200/50 dark:border-zinc-800 p-6 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/20 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="space-y-1">
+          <h4 class="font-bold text-sm text-zinc-900 dark:text-white">开源代码托管仓库</h4>
+          <p class="text-xs text-zinc-400 dark:text-zinc-500">可在社区查看或提交代码。</p>
+        </div>
+        
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- GitHub 图标按钮 -->
+          <a href="https://github.com/Microindole/coursedrop" target="_blank" class="btn-hover-spin inline-flex items-center justify-center p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-emerald-500 dark:hover:text-emerald-400 shadow-sm transition-all duration-200" title="访问 GitHub 仓库">
+            <svg class="btn-icon w-5 h-5 transition-transform duration-200" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          </a>
+          <!-- Release 下载图标按钮 -->
+          <a href="https://github.com/Microindole/coursedrop/releases" target="_blank" class="btn-hover-bounce inline-flex items-center justify-center p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all duration-200" title="下载最新 Releases">
+            <svg class="btn-icon w-5 h-5 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 第二章：矩阵 -->
+  <section id="status" class="scroll-mt-24 space-y-6">
+    <div class="flex items-baseline gap-3 border-b border-zinc-200/40 dark:border-zinc-800/40 pb-2">
+      <span class="font-handwritten text-3xl leading-none">Chapter 02</span>
+      <h2 class="text-xl font-extrabold text-zinc-900 dark:text-white">矩阵</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Java 服务端状态 -->
+      <div class="glass-card rounded-2xl p-6 border border-zinc-200/50 dark:border-zinc-800/80 flex flex-col transition-all duration-200">
+        <div class="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-emerald-500">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 3h13.5m-13.5-6h13.5m-13.5-3h13.5m-13.5-3H18.75" /></svg>
+            </span>
+            <h4 class="font-extrabold text-sm text-zinc-900 dark:text-white">Java 服务端</h4>
+          </div>
+          <span class="text-[9px] font-mono-custom text-zinc-400 dark:text-zinc-500">Spring Boot 3</span>
+        </div>
+
+        <ul class="space-y-3.5 text-xs text-zinc-500 dark:text-zinc-400 flex-grow">
+          <li class="flex items-start justify-between gap-4">
+            <span>公网分享与临时中转流</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">已实现</span>
+          </li>
+          <li class="flex items-start justify-between gap-4">
+            <span>E2EE 加密元数据校验</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">已实现</span>
+          </li>
+          <li class="flex items-start justify-between gap-4">
+            <span>物理粉碎与孤儿定时清理</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">已实现</span>
+          </li>
+          <li class="flex items-start justify-between gap-4">
+            <span>群组文件传输 MVP 通道</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">已实现</span>
+          </li>
+          <li class="flex items-start justify-between gap-4">
+            <span>轻量级版本控制迁移服务</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">已实现</span>
+          </li>
+          <li class="flex items-start justify-between gap-4 text-zinc-400 dark:text-zinc-500">
+            <span>数据库迁移框架接入 Flyway</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0">计划中</span>
+          </li>
+          <li class="flex items-start justify-between gap-4 text-zinc-400 dark:text-zinc-500">
+            <span>分布式防刷拦截与限流器</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0">计划中</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 鸿蒙客户端状态 -->
+      <div class="glass-card rounded-2xl p-6 border border-zinc-200/50 dark:border-zinc-800/80 flex flex-col transition-all duration-200">
+        <div class="flex items-center justify-between pb-4 border-b border-zinc-250 dark:border-zinc-800 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-blue-500">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-6 15h9" /></svg>
+            </span>
+            <h4 class="font-extrabold text-sm text-zinc-900 dark:text-white">鸿蒙手机端</h4>
+          </div>
+          <span class="text-[9px] font-mono-custom text-zinc-400 dark:text-zinc-500">ArkTS / RDB</span>
+        </div>
+
+        <ul class="space-y-3.5 text-xs text-zinc-500 dark:text-zinc-400 flex-grow">
+          <li class="flex items-start justify-between gap-4">
+            <span>本地关系型数据库索引与扫描</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">已实现</span>
+          </li>
+          <li class="flex items-start justify-between gap-4">
+            <span>端到端 AES-256-GCM 物理编解码</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">已实现</span>
+          </li>
+          <li class="flex items-start justify-between gap-4">
+            <span>提取码与 Scheme 剪贴板自动拉取</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">已实现</span>
+          </li>
+          <li class="flex items-start justify-between gap-4">
+            <span>局域网发现 (UDP 组播广播)</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">已实现</span>
+          </li>
+          <li class="flex items-start justify-between gap-4 text-zinc-650 dark:text-zinc-350">
+            <span>群组密文同步上传与物理还原联调</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">联调中</span>
+          </li>
+          <li class="flex items-start justify-between gap-4 text-zinc-400 dark:text-zinc-500">
+            <span>原生 Scan Kit 扫码能力封装</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0">开发中</span>
+          </li>
+          <li class="flex items-start justify-between gap-4 text-zinc-400 dark:text-zinc-500">
+            <span>局域网 P2P 高速直传握手协议</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0">计划中</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 第三章：协议 -->
+  <section id="security" class="scroll-mt-24 space-y-6">
+    <div class="flex items-baseline gap-3 border-b border-zinc-200/40 dark:border-zinc-800/40 pb-2">
+      <span class="font-handwritten text-3xl leading-none">Chapter 03</span>
+      <h2 class="text-xl font-extrabold text-zinc-900 dark:text-white">协议</h2>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6 sm:p-8 border border-zinc-200/50 dark:border-zinc-800/80 space-y-6">
+      <!-- 参数指标 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="p-5 rounded-xl bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200/50 dark:border-zinc-800/50">
+          <span class="text-zinc-400 dark:text-zinc-500 text-[9px] font-bold uppercase tracking-wider block">最大流大小</span>
+          <span class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono-custom" th:text="${maxFileSizeMb} + ' MB'">100 MB</span>
+        </div>
+        <div class="p-5 rounded-xl bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200/50 dark:border-zinc-800/50">
+          <span class="text-zinc-400 dark:text-zinc-500 text-[9px] font-bold uppercase tracking-wider block">物理粉碎倒计时</span>
+          <span class="text-3xl font-extrabold text-teal-600 dark:text-teal-400 font-mono-custom" th:text="${defaultTtlHours} + ' 小时'">168 小时</span>
+        </div>
+      </div>
+
+      <!-- 详细解说 -->
+      <div class="space-y-4 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+        <div class="flex items-baseline gap-2">
+          <h4 class="font-bold text-zinc-800 dark:text-zinc-200 text-sm">密文隔离安全规范</h4>
+          <span class="font-handwritten text-base text-emerald-500 dark:text-teal-400">E2EE Boundary</span>
+        </div>
+        <p>
+          传输项通过 <strong>AES-256-GCM</strong> 在本地客户端完全转换为密文。混淆解密所需的 Key <strong>仅存在于分享链接的 Fragment (#号后半部分) 中</strong>。
+        </p>
+        <p class="border-l-2 border-emerald-500/40 pl-3">
+          遵循标准网络协议，Fragment 字符由客户端私有持有，在向上发送请求时不会被网络链路打包呈递至服务端。因此，中转服务器仅能够接收、保存或分发未还原的数据流。
+        </p>
+      </div>
+
+      <!-- 三种策略 -->
+      <div class="space-y-4 pt-4 border-t border-zinc-200/50 dark:border-zinc-800/60">
+        <h4 class="font-bold text-zinc-800 dark:text-zinc-200 text-sm">提取校验级别定义</h4>
+        
+        <div class="grid grid-cols-1 gap-3.5">
+          <!-- 1. PUBLIC -->
+          <div class="group p-4 rounded-xl border border-zinc-200 dark:border-zinc-900 hover:border-emerald-500/40 transition-colors flex items-start gap-4">
+            <div class="p-2 rounded-lg bg-zinc-150 dark:bg-zinc-900 text-zinc-500 shrink-0">
+              <!-- SVG PUBLIC -->
+              <svg class="w-5 h-5 icon-transition" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path class="icon-lock-hook icon-transition" stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21.75h16.5a1.5 1.5 0 001.5-1.5V12a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 12v8.25a1.5 1.5 0 001.5 1.5z" />
+              </svg>
+            </div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-[10px] font-mono-custom text-emerald-500">PUBLIC</span>
+                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold">公开</span>
+              </div>
+              <p class="text-xs text-zinc-450 dark:text-zinc-500 leading-relaxed">
+                无需注册登录，任何获得提取码（或分享链接）的客户端均可免登录直接提取密文。若使用 Web 下载，则由浏览器前端在本地使用 Fragment 密钥自动流式解密。
+              </p>
+            </div>
+          </div>
+
+          <!-- 2. LOGIN_REQUIRED -->
+          <div class="group p-4 rounded-xl border border-zinc-200 dark:border-zinc-900 hover:border-amber-500/40 transition-colors flex items-start gap-4">
+            <div class="p-2 rounded-lg bg-zinc-150 dark:bg-zinc-900 text-zinc-500 shrink-0">
+              <!-- SVG LOGIN_REQUIRED -->
+              <svg class="w-5 h-5 icon-transition" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path class="icon-key icon-transition" stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75" stroke-width="2" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 15h3m-3 3h3" stroke-width="2" />
+                <rect x="3" y="10.5" width="18" height="11.25" rx="1.5" stroke-width="2" />
+              </svg>
+            </div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-[10px] font-mono-custom text-amber-500">LOGIN_REQUIRED</span>
+                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold">锁屏</span>
+              </div>
+              <p class="text-xs text-zinc-450 dark:text-zinc-500 leading-relaxed">
+                下载端必须通过手机客户端扫码，或者使用绑定的账号密码验证登录后，方可解锁提取通道。
+              </p>
+            </div>
+          </div>
+
+          <!-- 3. OWNER_ONLY -->
+          <div class="group p-4 rounded-xl border border-zinc-200 dark:border-zinc-900 hover:border-rose-500/40 transition-colors flex items-start gap-4">
+            <div class="p-2 rounded-lg bg-zinc-150 dark:bg-zinc-900 text-zinc-500 shrink-0">
+              <!-- SVG OWNER_ONLY -->
+              <svg class="w-5 h-5 icon-transition" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path class="icon-shield icon-transition" stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39 6.3 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+              </svg>
+            </div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-[10px] font-mono-custom text-rose-500">OWNER_ONLY</span>
+                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold">专有</span>
+              </div>
+              <p class="text-xs text-zinc-450 dark:text-zinc-500 leading-relaxed">
+                仅允许分享发起端的指纹设备或其主账号关联设备建立通道。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 第四章：获取 -->
+  <section id="download" class="scroll-mt-24 space-y-6">
+    <div class="flex items-baseline gap-3 border-b border-zinc-200/40 dark:border-zinc-800/40 pb-2">
+      <span class="font-handwritten text-3xl leading-none">Chapter 04</span>
+      <h2 class="text-xl font-extrabold text-zinc-900 dark:text-white">获取</h2>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6 sm:p-8 border border-zinc-200/50 dark:border-zinc-800/80 space-y-6">
+      <div class="space-y-3">
+        <h4 class="font-bold text-sm text-zinc-900 dark:text-white">自由配置中转源，解密本地完全掌控</h4>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+          CourseDrop 支持在手机端一键切换中转源地址。在手机客户端的「设置」面板中，您可以随时将接口端点（Server Endpoint）修改为您自己搭建的私有服务器网络地址。客户端的所有加密传输即刻导向自建节点。
+        </p>
+      </div>
+
+      <!-- 原生安装包精简按钮区 -->
+      <div class="border border-zinc-200/50 dark:border-zinc-800 p-5 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/20 flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div class="space-y-1">
+          <span class="text-[9px] font-bold font-mono-custom text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">HarmonyOS NEXT</span>
+          <div class="text-sm font-bold text-zinc-900 dark:text-white">客户端 HAP 安装包</div>
+          <div class="text-[11px] text-zinc-400">目前可以在 GitHub 仓库的 Release 板块下载编译好的测试版程序</div>
+        </div>
+        <!-- 纯 SVG 图标按钮 -->
+        <a href="https://github.com/Microindole/coursedrop/releases" target="_blank" class="btn-hover-bounce inline-flex items-center justify-center p-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all duration-200 shrink-0" title="获取 HAP 安装包">
+          <svg class="btn-icon w-5 h-5 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+        </a>
+      </div>
+
+      <div class="space-y-3.5 pt-4 border-t border-zinc-200/50 dark:border-zinc-800/60">
+        <h4 class="font-bold text-zinc-800 dark:text-zinc-200 text-sm">链接剪贴板协议捕获</h4>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+          安装客户端后，当您复制分享 Scheme 码（如 <code class="font-mono-custom bg-zinc-200/60 dark:bg-zinc-900 px-1.5 py-0.5 rounded text-xs text-emerald-500">coursedrop://...</code>）并打开客户端时，程序会自动提示拉取对应的文件。
+        </p>
+      </div>
+    </div>
+  </section>
+
+</div>

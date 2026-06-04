@@ -1,0 +1,83 @@
+<!-- templates/help/terminal.html -->
+<div th:fragment="terminal" class="space-y-6">
+
+  <!-- 第五章：捷径 -->
+  <section id="shortcuts" class="scroll-mt-24 space-y-6">
+    <div class="flex items-baseline gap-3 border-b border-zinc-200/40 dark:border-zinc-800/40 pb-2">
+      <span class="font-handwritten text-3xl leading-none">Chapter 05</span>
+      <h2 class="text-xl font-extrabold text-zinc-900 dark:text-white">捷径</h2>
+    </div>
+
+    <!-- 极客快捷跳转终端 -->
+    <div class="w-full rounded-2xl bg-zinc-950 text-zinc-100 p-6 shadow-xl border border-zinc-800/80 flex flex-col font-mono-custom">
+        <!-- 终端控制按钮 -->
+        <div class="flex items-center justify-between pb-4 border-b border-zinc-850 shrink-0 mb-4">
+          <div class="flex gap-2">
+            <span class="w-3 h-3 rounded-full bg-zinc-800 block"></span>
+            <span class="w-3 h-3 rounded-full bg-zinc-700 block"></span>
+            <span class="w-3 h-3 rounded-full bg-zinc-650 block"></span>
+          </div>
+          <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">CourseDrop Node Shell</span>
+          <a href="/console" class="text-[9px] text-emerald-500 hover:underline font-bold transition">访问独立控制台</a>
+        </div>
+
+      <!-- 终端命令行区 -->
+      <div class="text-[12px] leading-relaxed space-y-4">
+        <div>
+          <span class="text-emerald-500">guest@coursedrop:~$</span> help --interactive-debugger
+        </div>
+        <div class="text-zinc-400 text-[11px] leading-relaxed">
+          调试控制台就位。点击以下预置命令直接在终端运行并回显接口数据：
+        </div>
+
+        <!-- 交互命令按钮组（扩充为 6 个） -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <!-- Command 1 -->
+          <button onclick="runCommand('!/health')" class="group flex flex-col items-start p-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 transition-all duration-200">
+            <span class="text-emerald-400 font-bold font-mono-custom text-[11px] group-hover:text-emerald-300">!/health</span>
+            <span class="text-[8px] text-zinc-550 mt-1 uppercase tracking-wider">后端 API</span>
+          </button>
+          <!-- Command 2 -->
+          <button onclick="runCommand('!/caps')" class="group flex flex-col items-start p-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 transition-all duration-200">
+            <span class="text-emerald-400 font-bold font-mono-custom text-[11px] group-hover:text-emerald-300">!/caps</span>
+            <span class="text-[8px] text-zinc-550 mt-1 uppercase tracking-wider">后端 API</span>
+          </button>
+          <!-- Command 3 -->
+          <button onclick="runCommand('!/api/shares')" class="group flex flex-col items-start p-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 transition-all duration-200">
+            <span class="text-emerald-400 font-bold font-mono-custom text-[11px] group-hover:text-emerald-300">!/api/shares</span>
+            <span class="text-[8px] text-zinc-550 mt-1 uppercase tracking-wider">后端 API</span>
+          </button>
+          <!-- Command 4 -->
+          <button onclick="runCommand('!/env')" class="group flex flex-col items-start p-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 transition-all duration-200">
+            <span class="text-emerald-400 font-bold font-mono-custom text-[11px] group-hover:text-emerald-300">!/env</span>
+            <span class="text-[8px] text-zinc-550 mt-1 uppercase tracking-wider">本地拼装</span>
+          </button>
+          <!-- Command 5 -->
+          <button onclick="runCommand('!/info')" class="group flex flex-col items-start p-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-emerald-500/40 transition-all duration-200">
+            <span class="text-emerald-400 font-bold font-mono-custom text-[11px] group-hover:text-emerald-300">!/info</span>
+            <span class="text-[8px] text-zinc-550 mt-1 uppercase tracking-wider">本地拼装</span>
+          </button>
+          <!-- Command 6 -->
+          <button onclick="runCommand('!/clear')" class="group flex flex-col items-start p-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-rose-500/40 transition-all duration-200">
+            <span class="text-rose-450 font-bold font-mono-custom text-[11px] group-hover:text-rose-400">!/clear</span>
+            <span class="text-[8px] text-zinc-550 mt-1 uppercase tracking-wider">终端控制</span>
+          </button>
+        </div>
+
+        <!-- 终端输出回显区域 -->
+        <div id="terminal-output" class="border-t border-zinc-850 pt-4 mt-4 text-zinc-400 font-mono-custom hidden">
+          <div class="flex items-center justify-between text-[9px] text-zinc-500 mb-1.5">
+            <span>OUTPUT BUFFER</span>
+            <span id="output-status" class="font-bold">READY</span>
+          </div>
+          <pre id="output-content" class="bg-black/50 p-3 rounded-xl border border-zinc-900 overflow-x-auto text-[10px] text-emerald-400/90 whitespace-pre-wrap max-h-60 hide-scrollbar transition-all duration-200"></pre>
+        </div>
+
+        <div>
+          <span class="text-emerald-500">guest@coursedrop:~$</span> <span class="terminal-cursor"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>

@@ -350,11 +350,25 @@
     const input = document.getElementById("share-code");
     const code = input.value.trim();
     if (code.startsWith("!")) {
-      let path = code.substring(1);
-      if (path === "/caps") {
-        path = "/api/health/capabilities";
-      } else if (path === "/health") {
-        path = "/api/health";
+      let path = "/console";
+      if (code === "!/health") {
+        path = "/console?tab=health";
+      } else if (code === "!/caps") {
+        path = "/console?tab=caps";
+      } else if (code === "!/api/shares") {
+        path = "/console?tab=shares";
+      } else if (code === "!/env") {
+        path = "/console?tab=env";
+      } else if (code === "!/info") {
+        path = "/console?tab=info";
+      } else if (code === "!/help") {
+        path = "/help";
+      } else if (code === "!/clear") {
+        input.value = "";
+        const box = document.getElementById("autocomplete-box");
+        if (box) box.classList.add("hidden");
+        showToast("指令输入已清除");
+        return;
       }
       window.location.href = path;
       return;
@@ -374,7 +388,11 @@
   const commands = [
     { cmd: "!/health", desc: "查看后端系统健康状态" },
     { cmd: "!/caps", desc: "查看服务核心能力清单" },
-    { cmd: "!/help", desc: "跳转至独立使用指南页面" }
+    { cmd: "!/api/shares", desc: "查看服务端活跃中转列表" },
+    { cmd: "!/env", desc: "查看服务及客户端环境变量" },
+    { cmd: "!/info", desc: "查看当前节点与技术栈参数" },
+    { cmd: "!/help", desc: "跳转至独立使用指南手册" },
+    { cmd: "!/clear", desc: "清除首页当前输入的指令" }
   ];
 
   let selectedCmdIndex = -1;
@@ -407,7 +425,7 @@
             <span class="font-mono-custom text-emerald-600 dark:text-emerald-400 font-bold">${item.cmd}</span>
             <span class="text-zinc-400 dark:text-zinc-500 text-[10px]">${item.desc}</span>
           </div>
-          <span class="text-[9px] font-bold text-zinc-300 dark:text-zinc-600 border border-zinc-200 dark:border-zinc-800 rounded px-1.5 py-0.2 scale-90">Enter</span>
+          <span class="text-[9px] font-bold text-zinc-300 dark:text-zinc-600 border border-zinc-200/80 dark:border-zinc-800 rounded px-1.5 py-0.2 scale-90">Enter</span>
         `;
         
         li.addEventListener("mousedown", (e) => {
@@ -416,7 +434,11 @@
           box.classList.add("hidden");
           const form = input.closest("form");
           if (form) {
-            form.dispatchEvent(new Event("submit", { cancelable: true }));
+            if (typeof form.requestSubmit === "function") {
+              form.requestSubmit();
+            } else {
+              openShare(new Event("submit"));
+            }
           }
         });
 
@@ -432,6 +454,14 @@
       renderList(matches);
     });
 
+    input.addEventListener("focus", () => {
+      const val = input.value.trim();
+      const matches = getMatches(val);
+      if (matches.length > 0) {
+        renderList(matches);
+      }
+    });
+
     input.addEventListener("keydown", (e) => {
       const val = input.value.trim();
       const matches = getMatches(val);
@@ -442,10 +472,13 @@
         e.preventDefault();
         selectedCmdIndex = (selectedCmdIndex + 1) % matches.length;
         renderList(matches);
+        // 按下上下键时实时同步输入框的值，提升极客输入体验
+        input.value = matches[selectedCmdIndex].cmd;
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         selectedCmdIndex = (selectedCmdIndex - 1 + matches.length) % matches.length;
         renderList(matches);
+        input.value = matches[selectedCmdIndex].cmd;
       } else if (e.key === "Tab") {
         e.preventDefault();
         const activeIdx = selectedCmdIndex >= 0 ? selectedCmdIndex : 0;
@@ -460,7 +493,11 @@
           box.classList.add("hidden");
           const form = input.closest("form");
           if (form) {
-            form.dispatchEvent(new Event("submit", { cancelable: true }));
+            if (typeof form.requestSubmit === "function") {
+              form.requestSubmit();
+            } else {
+              openShare(new Event("submit"));
+            }
           }
         }
       }
@@ -735,13 +772,28 @@
   }
 
   // 苹果风页面平滑转场及同源链接拦截
-  document.addEventListener("DOMContentLoaded", () => {
+  window.addEventListener("pageshow", () => {
     const mainEl = document.querySelector("main");
     if (mainEl) {
-      // 渐显进入
-      mainEl.classList.remove("opacity-0");
+      // 每次页面展示（包括后退缓存载入）都重置进入转场
+      mainEl.classList.remove("apple-transition-exit", "opacity-0");
       mainEl.classList.add("apple-transition-enter");
     }
+
+    // 解决浏览器后退时残留上一条输入指令或自动补全的体验 Bug
+    const input = document.getElementById("share-code");
+    const box = document.getElementById("autocomplete-box");
+    if (input) {
+      input.value = "";
+    }
+    if (box) {
+      box.classList.add("hidden");
+    }
+    selectedCmdIndex = -1;
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const mainEl = document.querySelector("main");
 
     // 拦截同源超链接点击，执行退出动画后再跳转
     document.addEventListener("click", (e) => {
