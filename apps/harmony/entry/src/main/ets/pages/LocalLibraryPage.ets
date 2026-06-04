@@ -5,7 +5,6 @@ import {
   CdButton,
   CdSearchField,
   CdSegmentedControl,
-  CdSectionHeader,
   CdTopBar,
   CdLocalFileCard,
   CdLocalLibraryActions,
@@ -25,6 +24,7 @@ export default struct LocalLibraryPage {
   @State files: LocalFileEntry[] = [];
   @State selectedIds: string[] = [];
   @State isEditMode: boolean = false;
+  @State isAiPickMode: boolean = false;
   @State filter: LocalLibraryFilter = 'ALL';
   @State keyword: string = '';
   @State selectedFile: LocalFileEntry | null = null;
@@ -88,6 +88,38 @@ export default struct LocalLibraryPage {
     }
   }
 
+  private enterAiPickMode(): void {
+    animateTo({ duration: 200, curve: Curve.FastOutSlowIn }, () => {
+      this.isEditMode = true;
+      this.isAiPickMode = true;
+      this.selectedIds = [];
+    });
+  }
+
+  private exitEditMode(): void {
+    animateTo({ duration: 200, curve: Curve.FastOutSlowIn }, () => {
+      this.isEditMode = false;
+      this.isAiPickMode = false;
+      this.selectedIds = [];
+    });
+  }
+
+  private sendSelectedToAi(): void {
+    if (this.selectedIds.length === 0) {
+      return;
+    }
+    const ids = this.selectedIds.slice();
+    this.selectedIds = [];
+    this.isEditMode = false;
+    this.isAiPickMode = false;
+    router.pushUrl({
+      url: 'pages/AiChatPage',
+      params: {
+        fileIds: ids
+      }
+    });
+  }
+
   @Builder
   PaginationBar() {
     if (this.getTotalPages() > 1) {
@@ -140,12 +172,15 @@ export default struct LocalLibraryPage {
             router.back();
           },
           onTrailingTap: () => {
-            animateTo({ duration: 200 }, () => {
-              this.isEditMode = !this.isEditMode;
-              if (!this.isEditMode) {
+            if (this.isEditMode) {
+              this.exitEditMode();
+            } else {
+              animateTo({ duration: 200 }, () => {
+                this.isEditMode = true;
+                this.isAiPickMode = false;
                 this.selectedIds = [];
-              }
-            });
+              });
+            }
           }
         })
 
@@ -204,15 +239,40 @@ export default struct LocalLibraryPage {
           }
         })
 
-        CdSectionHeader({
-          title: this.isEditMode ? '选择文件内容' : '全部文件列表',
-          actionText: this.isEditMode ? (this.isAllSelected() ? '取消全选' : '全选') : '',
-          onAction: () => {
-            if (this.isEditMode) {
-              this.toggleSelectAll();
+        Row({ space: AppSpacing.SM }) {
+          Text(this.isEditMode ? (this.isAiPickMode ? '选择 AI 上下文文件' : '选择文件内容') : '全部文件列表')
+            .fontSize(AppTypography.BODY)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(AppColors.TEXT)
+            .layoutWeight(1)
+
+          if (this.isEditMode) {
+            Text(this.isAllSelected() ? '取消全选' : '全选')
+              .fontSize(AppTypography.BODY_SMALL)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(AppColors.PRIMARY)
+              .onClick(() => {
+                this.toggleSelectAll();
+              })
+          } else {
+            Stack() {
+              Image($r('app.media.cd_icon_robots'))
+                .width(18)
+                .height(18)
+                .fillColor(AppColors.PRIMARY)
             }
+            .width(38)
+            .height(38)
+            .borderRadius(19)
+            .backgroundColor(AppColors.PRIMARY_SOFT)
+            .onClick(() => {
+              this.enterAiPickMode();
+            })
           }
-        })
+        }
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
+        .padding({ top: AppSpacing.LG, bottom: AppSpacing.SM })
 
         // 文件卡片列表
         Column({ space: AppSpacing.MD }) {
@@ -260,6 +320,7 @@ export default struct LocalLibraryPage {
           isEditMode: this.isEditMode,
           selectedIds: $selectedIds,
           isAllSelected: this.isAllSelected(),
+          actionMode: this.isAiPickMode ? 'ai' : 'share',
           onShareSelected: () => {
             const msg = this.viewModel.shareSelected(this.selectedIds);
             this.bannerText = msg;
@@ -269,6 +330,9 @@ export default struct LocalLibraryPage {
             this.refreshFiles();
             this.clampPage();
             this.onSharePrepared();
+          },
+          onSendToAiSelected: () => {
+            this.sendSelectedToAi();
           },
           onDeleteSelected: () => {
             const msg = this.viewModel.deleteSelected(this.selectedIds);

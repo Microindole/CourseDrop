@@ -2,6 +2,7 @@
 export { CdPanel } from './common/CdPanel';
 export { CdButton } from './common/CdButton';
 export { CdIconButton } from './common/CdIconButton';
+export { CdActionIcon } from './common/CdActionIcon';
 export { CdTextField } from './common/CdTextField';
 export { CdSearchField } from './common/CdSearchField';
 export { CdSegmentedControl } from './common/CdSegmentedControl';

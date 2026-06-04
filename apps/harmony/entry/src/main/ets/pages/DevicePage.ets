@@ -18,6 +18,9 @@ import { DeviceViewModel } from '../viewmodels/DeviceViewModel';
 @Component
 export default struct DevicePage {
   showBack: boolean = true;
+  onBack: () => void = () => {
+    router.back();
+  };
   private viewModel: DeviceViewModel = new DeviceViewModel();
 
   @State devices: Device[] = [];
@@ -58,7 +61,7 @@ export default struct DevicePage {
           leadingText: this.showBack ? '返回' : '',
           trailingText: '刷新',
           onLeadingTap: () => {
-            router.back();
+            this.onBack();
           },
           onTrailingTap: () => {
             this.scanDevices();

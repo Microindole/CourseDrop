@@ -40,11 +40,12 @@ export class CourseDropFileImportService implements FileImportService {
     if (targetDirectory.length === 0) {
       throw new Error('应用沙箱目录未初始化');
     }
-    const copiedFile = this.fileSystemService.copyToDirectory(file.uri, targetDirectory, file.displayName);
+    const displayName = this.createUniqueDisplayName(file.displayName);
+    const copiedFile = this.fileSystemService.copyToDirectory(file.uri, targetDirectory, displayName);
     const localFileId = `local-${Date.now()}`;
     const entry: LocalFileEntry = {
       id: localFileId,
-      displayName: file.displayName,
+      displayName: displayName,
       type: file.type,
       contentType: file.contentType,
       sizeBytes: copiedFile.sizeBytes,
@@ -58,5 +59,23 @@ export class CourseDropFileImportService implements FileImportService {
       localFileId: localFileId,
       localUri: copiedFile.path
     };
+  }
+
+  private createUniqueDisplayName(displayName: string): string {
+    const existingNames = this.indexRepository.list().map((file: LocalFileEntry) => file.displayName);
+    if (!existingNames.includes(displayName)) {
+      return displayName;
+    }
+    const extensionIndex = displayName.lastIndexOf('.');
+    const hasExtension = extensionIndex > 0 && extensionIndex < displayName.length - 1;
+    const baseName = hasExtension ? displayName.substring(0, extensionIndex) : displayName;
+    const extension = hasExtension ? displayName.substring(extensionIndex) : '';
+    let suffix = 1;
+    let candidate = `${baseName}(${suffix})${extension}`;
+    while (existingNames.includes(candidate)) {
+      suffix += 1;
+      candidate = `${baseName}(${suffix})${extension}`;
+    }
+    return candidate;
   }
 }

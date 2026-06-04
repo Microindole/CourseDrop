@@ -15,11 +15,11 @@ export class RuntimeLocalFileIndexRepository implements LocalFileIndexRepository
   private files: LocalFileEntry[] = [];
 
   list(): LocalFileEntry[] {
-    return this.copyFiles(this.files);
+    return this.sortByImportedAtDesc(this.copyFiles(this.files));
   }
 
   listByType(type: TransferItemType): LocalFileEntry[] {
-    return this.copyFiles(this.files.filter((file) => file.type === type));
+    return this.sortByImportedAtDesc(this.copyFiles(this.files.filter((file) => file.type === type)));
   }
 
   findById(id: string): LocalFileEntry | undefined {
@@ -66,6 +66,26 @@ export class RuntimeLocalFileIndexRepository implements LocalFileIndexRepository
       encrypted: file.encrypted
     };
   }
+
+  private sortByImportedAtDesc(files: LocalFileEntry[]): LocalFileEntry[] {
+    return files.sort((left: LocalFileEntry, right: LocalFileEntry) => this.resolveImportedAt(right) - this.resolveImportedAt(left));
+  }
+
+  private resolveImportedAt(file: LocalFileEntry): number {
+    const fromId = this.parseFirstNumber(file.id);
+    if (fromId > 0) {
+      return fromId;
+    }
+    return this.parseFirstNumber(file.localUri);
+  }
+
+  private parseFirstNumber(value: string): number {
+    const matches = value.match(/\d{10,}/);
+    if (matches === null || matches.length === 0) {
+      return 0;
+    }
+    return Number(matches[0]);
+  }
 }
 
 const CREATE_LOCAL_FILES_SQL: string = `
@@ -88,12 +108,12 @@ export class RdbLocalFileIndexRepository implements LocalFileIndexRepository {
 
   list(): LocalFileEntry[] {
     this.ensureInitialized();
-    return this.copyFiles(this.files);
+    return this.sortByImportedAtDesc(this.copyFiles(this.files));
   }
 
   listByType(type: TransferItemType): LocalFileEntry[] {
     this.ensureInitialized();
-    return this.copyFiles(this.files.filter((file) => file.type === type));
+    return this.sortByImportedAtDesc(this.copyFiles(this.files.filter((file) => file.type === type)));
   }
 
   findById(id: string): LocalFileEntry | undefined {
@@ -229,5 +249,25 @@ export class RdbLocalFileIndexRepository implements LocalFileIndexRepository {
       remoteCached: file.remoteCached,
       encrypted: file.encrypted
     };
+  }
+
+  private sortByImportedAtDesc(files: LocalFileEntry[]): LocalFileEntry[] {
+    return files.sort((left: LocalFileEntry, right: LocalFileEntry) => this.resolveImportedAt(right) - this.resolveImportedAt(left));
+  }
+
+  private resolveImportedAt(file: LocalFileEntry): number {
+    const fromId = this.parseFirstNumber(file.id);
+    if (fromId > 0) {
+      return fromId;
+    }
+    return this.parseFirstNumber(file.localUri);
+  }
+
+  private parseFirstNumber(value: string): number {
+    const matches = value.match(/\d{10,}/);
+    if (matches === null || matches.length === 0) {
+      return 0;
+    }
+    return Number(matches[0]);
   }
 }

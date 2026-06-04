@@ -1,5 +1,4 @@
 import router from '@ohos.router';
-import DevicePage from './DevicePage';
 import LocalLibraryPage from './LocalLibraryPage';
 import SettingsPage from './SettingsPage';
 import SharePage from './SharePage';
@@ -80,6 +79,13 @@ struct HomePage {
       .catch((error: Error) => {
         console.error(`[CourseDrop] copy recent share failed: ${String(error)}`);
       });
+  }
+
+  private switchMainTab(index: number): void {
+    this.currentIndex = index;
+    if (index === 0) {
+      this.syncHomeData();
+    }
   }
 
   @Builder
@@ -194,10 +200,10 @@ struct HomePage {
       // 上手指南步骤卡片
       CdHomeGuideStep({
         onGoLibrary: () => {
-          this.currentIndex = 2; // 本地库 Tab
+          this.switchMainTab(2); // 本地库 Tab
         },
         onGoShare: () => {
-          this.currentIndex = 1; // 分享 Tab
+          this.switchMainTab(1); // 分享 Tab
         }
       })
 
@@ -223,14 +229,9 @@ struct HomePage {
     LocalLibraryPage({
       showBack: false,
       onSharePrepared: () => {
-        this.currentIndex = 1;
+        this.switchMainTab(1);
       }
     })
-  }
-
-  @Builder
-  DeviceTab() {
-    DevicePage({ showBack: false })
   }
 
   @Builder
@@ -255,9 +256,6 @@ struct HomePage {
         },
         libraryContent: () => {
           this.LibraryTab();
-        },
-        deviceContent: () => {
-          this.DeviceTab();
         },
         settingsContent: () => {
           this.SettingsTab();

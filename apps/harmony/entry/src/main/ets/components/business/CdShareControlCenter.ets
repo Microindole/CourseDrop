@@ -1,6 +1,7 @@
 import { AppColors, AppRadius, AppSpacing, AppTypography } from '../../common/Theme';
 import { ShareSession } from '../../models/ShareSession';
 import { CdButton } from '../common/CdButton';
+import { CdIconButton } from '../common/CdIconButton';
 import { CdPanel } from '../common/CdPanel';
 
 @Component
@@ -126,13 +127,13 @@ export struct CdShareControlCenter {
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .layoutWeight(1)
             
-            Text('复制')
-              .fontSize(AppTypography.BODY_SMALL)
-              .fontWeight(FontWeight.Bold)
-              .fontColor(AppColors.PRIMARY_SELECTED)
-              .onClick(() => {
+            CdIconButton({
+              icon: $r('app.media.cd_icon_copy'),
+              variant: 'plain',
+              onTap: () => {
                 this.onCopy();
-              })
+              }
+            })
           }
           .width('100%')
           .padding(AppSpacing.MD)

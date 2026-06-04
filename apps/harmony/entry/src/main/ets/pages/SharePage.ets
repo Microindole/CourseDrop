@@ -7,6 +7,7 @@ import {
   CdSectionHeader,
   CdTopBar,
   CdPanel,
+  CdActionIcon,
   CdShareControlCenter,
   CdShareDraftList,
   CdShareTaskList
@@ -123,8 +124,20 @@ export default struct SharePage {
           tone: this.errorMessage.length > 0 ? 'danger' : 'info'
         })
 
-        CdPanel() {
+        CdPanel({ hasShadow: true }) {
           Row({ space: AppSpacing.MD }) {
+            Stack() {
+              Image($r('app.media.cd_icon_link'))
+                .width(22)
+                .height(22)
+                .fillColor(AppColors.ACCENT)
+            }
+            .width(46)
+            .height(46)
+            .backgroundColor(AppColors.ACCENT_SOFT)
+            .borderRadius(16)
+            .border({ width: 0.7, color: AppColors.ACCENT })
+
             Column({ space: 4 }) {
               Text('接收别人分享')
                 .fontSize(AppTypography.BODY)
@@ -138,14 +151,16 @@ export default struct SharePage {
             .layoutWeight(1)
             .alignItems(HorizontalAlign.Start)
 
-            CdButton({
-              label: '去接收',
-              variant: 'tonal',
+            CdActionIcon({
+              icon: $r('app.media.cd_icon_search'),
+              label: '',
+              tone: AppColors.PRIMARY,
+              bgColor: AppColors.PRIMARY_SOFT,
+              compact: true,
               onTap: () => {
                 router.pushUrl({ url: 'pages/ShareDownloadPage' });
               }
             })
-            .width(96)
           }
           .width('100%')
           .alignItems(VerticalAlign.Center)

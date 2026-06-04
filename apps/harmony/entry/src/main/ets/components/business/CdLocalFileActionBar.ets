@@ -6,7 +6,9 @@ export struct CdLocalFileActionBar {
   @Prop isEditMode: boolean = false;
   @Link selectedIds: string[];
   @Prop isAllSelected: boolean = false;
+  actionMode: 'share' | 'ai' = 'share';
   onShareSelected: () => void = () => {};
+  onSendToAiSelected: () => void = () => {};
   onDeleteSelected: () => void = () => {};
 
   build() {
@@ -20,7 +22,7 @@ export struct CdLocalFileActionBar {
                 .fontWeight(FontWeight.Bold)
                 .fontColor(AppColors.PRIMARY)
               
-              Text(this.isAllSelected ? '已全选过滤到的项目' : '点击操作项批量处理')
+              Text(this.actionMode === 'ai' ? '确认后加入课递助手上下文' : (this.isAllSelected ? '已全选过滤到的项目' : '点击操作项批量处理'))
                 .fontSize(10)
                 .fontColor(AppColors.TEXT_SECONDARY)
             }
@@ -29,20 +31,26 @@ export struct CdLocalFileActionBar {
 
             Row({ space: AppSpacing.SM }) {
               CdIconButton({
-                icon: $r('app.media.cd_icon_share'),
+                icon: this.actionMode === 'ai' ? $r('app.media.cd_icon_robots') : $r('app.media.cd_icon_share'),
                 variant: 'tonal',
                 onTap: () => {
-                  this.onShareSelected();
+                  if (this.actionMode === 'ai') {
+                    this.onSendToAiSelected();
+                  } else {
+                    this.onShareSelected();
+                  }
                 }
               })
 
-              CdIconButton({
-                icon: $r('app.media.cd_icon_trash'),
-                variant: 'danger',
-                onTap: () => {
-                  this.onDeleteSelected();
-                }
-              })
+              if (this.actionMode === 'share') {
+                CdIconButton({
+                  icon: $r('app.media.cd_icon_trash'),
+                  variant: 'danger',
+                  onTap: () => {
+                    this.onDeleteSelected();
+                  }
+                })
+              }
             }
           }
           .width('100%')

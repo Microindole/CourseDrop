@@ -1,3 +1,4 @@
+import { fileIo } from '@kit.CoreFileKit';
 import { TransferItemType } from '../../models/CommonTypes';
 import { LocalFileEntry } from '../../models/LocalFileEntry';
 import { CourseDropFileStore } from './CourseDropFileStore';
@@ -21,11 +22,11 @@ export class IndexedLocalLibraryService implements LocalLibraryService {
   }
 
   listFiles(): LocalFileEntry[] {
-    return this.indexRepository.list();
+    return this.cleanupMissingFiles(this.indexRepository.list());
   }
 
   listByType(type: TransferItemType): LocalFileEntry[] {
-    return this.indexRepository.listByType(type);
+    return this.listFiles().filter((file: LocalFileEntry) => file.type === type);
   }
 
   markShared(ids: string[]): void {
@@ -40,5 +41,38 @@ export class IndexedLocalLibraryService implements LocalLibraryService {
 
   removeFiles(ids: string[]): void {
     this.indexRepository.remove(ids);
+  }
+
+  private cleanupMissingFiles(files: LocalFileEntry[]): LocalFileEntry[] {
+    const existingFiles: LocalFileEntry[] = [];
+    const missingIds: string[] = [];
+    files.forEach((file: LocalFileEntry) => {
+      if (this.fileExists(file.localUri)) {
+        existingFiles.push(file);
+      } else {
+        missingIds.push(file.id);
+      }
+    });
+    if (missingIds.length > 0) {
+      this.indexRepository.remove(missingIds);
+      console.warn(`[CourseDrop] removed missing local library files: ${missingIds.join(',')}`);
+    }
+    return existingFiles;
+  }
+
+  private fileExists(uri: string): boolean {
+    try {
+      const stat = fileIo.statSync(this.toLocalPath(uri));
+      return stat.size > 0;
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  private toLocalPath(uri: string): string {
+    if (!uri.startsWith('file://')) {
+      return uri;
+    }
+    return decodeURIComponent(uri.replace(/^file:\/\//, ''));
   }
 }

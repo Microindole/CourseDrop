@@ -2,12 +2,11 @@ import { AppColors, AppShadows, AppSpacing, AppSize, AppTypography } from '../..
 
 @Component
 export struct CdBottomTabs {
-  @Link currentIndex: number;
+  @Link @Watch('onCurrentIndexChange') currentIndex: number;
   
   @BuilderParam homeContent: () => void = this.defaultContent;
   @BuilderParam shareContent: () => void = this.defaultContent;
   @BuilderParam libraryContent: () => void = this.defaultContent;
-  @BuilderParam deviceContent: () => void = this.defaultContent;
   @BuilderParam settingsContent: () => void = this.defaultContent;
   onTabChange: (index: number) => void = (_index: number) => {};
 
@@ -15,6 +14,55 @@ export struct CdBottomTabs {
   defaultContent() {}
 
   @State private clickedIndex: number = -1;
+  @State private displayIndex: number = 0;
+  @State private previousIndex: number = 0;
+  @State private targetIndex: number = 0;
+  @State private transitionProgress: number = 1;
+
+  aboutToAppear() {
+    this.displayIndex = this.currentIndex;
+    this.previousIndex = this.currentIndex;
+    this.targetIndex = this.currentIndex;
+    this.transitionProgress = 1;
+  }
+
+  private onCurrentIndexChange(_propName: string) {
+    this.startContentTransition(this.currentIndex);
+  }
+
+  private startContentTransition(index: number) {
+    if (index === this.targetIndex && this.transitionProgress < 1) {
+      return;
+    }
+    if (index === this.displayIndex && this.transitionProgress === 1) {
+      return;
+    }
+    this.previousIndex = this.displayIndex;
+    this.targetIndex = index;
+    this.transitionProgress = 0;
+    animateTo({ duration: 120, curve: Curve.EaseOut }, () => {
+      this.displayIndex = index;
+    });
+    animateTo({ duration: 260, curve: Curve.FastOutSlowIn }, () => {
+      this.transitionProgress = 1;
+    });
+  }
+
+  private switchTab(index: number) {
+    if (index === this.currentIndex && index === this.displayIndex) {
+      return;
+    }
+    this.startContentTransition(index);
+    this.currentIndex = index;
+    this.onTabChange(index);
+  }
+
+  private transitionOffset(): number {
+    if (this.displayIndex >= this.previousIndex) {
+      return (1 - this.transitionProgress) * 22;
+    }
+    return (1 - this.transitionProgress) * -22;
+  }
 
   @Builder
   tabItem(index: number, icon: Resource, label: string) {
@@ -66,25 +114,29 @@ export struct CdBottomTabs {
       }
     })
     .onClick(() => {
-      this.currentIndex = index;
-      this.onTabChange(index);
+      this.switchTab(index);
     })
   }
 
   build() {
     Column() {
       Stack({ alignContent: Alignment.TopStart }) {
-        if (this.currentIndex === 0) {
-          this.homeContent()
-        } else if (this.currentIndex === 1) {
-          this.shareContent()
-        } else if (this.currentIndex === 2) {
-          this.libraryContent()
-        } else if (this.currentIndex === 3) {
-          this.deviceContent()
-        } else {
-          this.settingsContent()
+        Column() {
+          if (this.displayIndex === 0) {
+            this.homeContent()
+          } else if (this.displayIndex === 1) {
+            this.shareContent()
+          } else if (this.displayIndex === 2) {
+            this.libraryContent()
+          } else {
+            this.settingsContent()
+          }
         }
+        .width('100%')
+        .height('100%')
+        .opacity(this.transitionProgress)
+        .translate({ x: this.transitionOffset(), y: 0 })
+        .animation({ duration: 260, curve: Curve.FastOutSlowIn })
       }
       .width('100%')
       .layoutWeight(1)
@@ -95,8 +147,7 @@ export struct CdBottomTabs {
         this.tabItem(0, $r('app.media.cd_icon_home'), '首页')
         this.tabItem(1, $r('app.media.cd_icon_share'), '分享')
         this.tabItem(2, $r('app.media.cd_icon_library'), '本地库')
-        this.tabItem(3, $r('app.media.cd_icon_devices'), '设备')
-        this.tabItem(4, $r('app.media.cd_icon_settings'), '设置')
+        this.tabItem(3, $r('app.media.cd_icon_settings'), '设置')
       }
       .width('100%')
       .height(66)
