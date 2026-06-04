@@ -34,6 +34,16 @@ public class GroupMemberRepository {
                 .toList();
     }
 
+    public List<GroupMemberRecord> findActiveByFingerprintId(String fingerprintId) {
+        return mapper.selectList(new LambdaQueryWrapper<GroupMemberEntity>()
+                .eq(GroupMemberEntity::getFingerprintId, fingerprintId)
+                .eq(GroupMemberEntity::getStatus, GroupMemberStatus.ACTIVE.name())
+                .orderByDesc(GroupMemberEntity::getJoinedAt))
+                .stream()
+                .map(this::toRecord)
+                .toList();
+    }
+
     public Optional<GroupMemberRecord> findActive(String groupId, String fingerprintId) {
         return Optional.ofNullable(mapper.selectOne(new LambdaQueryWrapper<GroupMemberEntity>()
                 .eq(GroupMemberEntity::getGroupId, groupId)

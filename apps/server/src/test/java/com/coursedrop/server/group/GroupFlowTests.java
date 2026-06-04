@@ -49,6 +49,12 @@ class GroupFlowTests {
                 .andReturn();
         var groupId = objectMapper.readTree(createGroupResult.getResponse().getContentAsString()).get("id").asText();
 
+        mockMvc.perform(get("/api/groups/mine")
+                .header("X-CourseDrop-Fingerprint-Id", ownerFingerprintId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(groupId)))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"role\":\"OWNER\"")));
+
         mockMvc.perform(post("/api/groups/{groupId}/join", groupId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""

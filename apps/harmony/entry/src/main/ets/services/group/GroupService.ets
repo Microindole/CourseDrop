@@ -146,7 +146,9 @@ export class DefaultGroupService implements GroupService {
     return {
       allowText: false,
       expiryHours: 24,
-      maxFileSizeMb: 100
+      maxFileSizeMb: 100,
+      avatarText: '群',
+      avatarColor: '#1466FF'
     };
   }
 }
