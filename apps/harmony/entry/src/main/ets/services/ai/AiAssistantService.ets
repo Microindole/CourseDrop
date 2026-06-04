@@ -12,7 +12,7 @@ import type {
 import type { AiConfigRepository } from './config';
 import { AiConversationFactory } from './memory';
 import type { AiConversation, AiMemoryRepository } from './memory';
-import type { AiDocumentService } from './parsers';
+import type { AiDocumentService, ParsedDocument } from './parsers';
 import { LlmProviderFactory } from './providers';
 
 export interface AiSendMessageCommand {
@@ -79,10 +79,10 @@ export class DefaultAiAssistantService implements AiAssistantService {
     const conversation = this.loadOrCreate(command.conversationId);
     const fileContexts = this.parseFileContexts(command.files);
     const memory = this.createMemory(conversation, fileContexts.length > 0);
-    memory.addUserMessage(command.content);
+    memory.addUserMessage(command.content, fileContexts);
 
     const provider = this.providerFactory.create(providerConfig);
-    const assistantMessage = await provider.chat(memory.getMessagesForModel(fileContexts), {
+    const assistantMessage = await provider.chat(memory.getMessagesForModel(), {
       temperature: providerConfig.temperature,
       maxTokens: providerConfig.maxTokens
     });
@@ -105,12 +105,12 @@ export class DefaultAiAssistantService implements AiAssistantService {
       const conversation = this.loadOrCreate(command.conversationId);
       const fileContexts = this.parseFileContexts(command.files);
       const memory = this.createMemory(conversation, fileContexts.length > 0);
-      memory.addUserMessage(command.content);
+      memory.addUserMessage(command.content, fileContexts);
       let assistantText = '';
 
       const provider = this.providerFactory.create(providerConfig);
 
-      return provider.chatStream(memory.getMessagesForModel(fileContexts), {
+      return provider.chatStream(memory.getMessagesForModel(), {
         onChunk: (text) => {
           assistantText += text;
           callbacks.onChunk(text);
@@ -159,7 +159,16 @@ export class DefaultAiAssistantService implements AiAssistantService {
       return [];
     }
     const limits = this.configRepository.getRuntimeLimits();
-    return files.map((file) => this.documentService.toFileContext(this.documentService.parseLocalFile(file, limits)));
+    const contexts: AiFileContext[] = [];
+    files.forEach((file: LocalFileEntry) => {
+      const document: ParsedDocument = this.documentService.parseLocalFile(file, limits);
+      if (document.status === 'OK' || document.status === 'TRUNCATED') {
+        contexts.push(this.documentService.toFileContext(document));
+      } else {
+        console.warn(`[CourseDrop] skip AI file context ${file.displayName}: ${document.status} ${document.errorMessage === undefined ? '' : document.errorMessage}`);
+      }
+    });
+    return contexts;
   }
 
   private persistConversation(conversation: AiConversation, messages: AiMessage[], fileContexts: AiFileContext[]): void {

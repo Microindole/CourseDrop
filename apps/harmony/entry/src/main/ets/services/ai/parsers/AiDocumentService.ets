@@ -36,7 +36,9 @@ export class DefaultAiDocumentService implements AiDocumentService {
       mimeType: document.mimeType,
       sizeBytes: document.sizeBytes,
       extractedText: document.text,
-      summary: document.summary
+      summary: document.summary,
+      parseStatus: document.status,
+      errorMessage: document.errorMessage
     };
   }
 }

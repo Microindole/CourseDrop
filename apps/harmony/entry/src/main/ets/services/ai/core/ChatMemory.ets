@@ -25,8 +25,11 @@ export class ChatMemory {
     this.trimHistory();
   }
 
-  addUserMessage(content: string): AiMessage {
-    const message = AiMessageFactory.user(content);
+  addUserMessage(content: string, fileContexts?: AiFileContext[]): AiMessage {
+    const parts = fileContexts !== undefined && fileContexts.length > 0 ?
+      fileContexts.map((file: AiFileContext) => AiMessageFactory.fileContext(file)) :
+      undefined;
+    const message = AiMessageFactory.user(content, parts);
     this.addMessage(message);
     return message;
   }
@@ -37,11 +40,8 @@ export class ChatMemory {
     return message;
   }
 
-  getMessagesForModel(fileContexts?: AiFileContext[]): AiMessage[] {
-    let prompt = this.systemPrompt;
-    if (fileContexts !== undefined && fileContexts.length > 0) {
-      prompt += this.formatFileContexts(fileContexts);
-    }
+  getMessagesForModel(): AiMessage[] {
+    const prompt = this.systemPrompt;
     return [
       AiMessageFactory.system(prompt),
       ...this.history
@@ -69,21 +69,5 @@ export class ChatMemory {
     while (this.history.length > this.maxHistoryMessages) {
       this.history.shift();
     }
-  }
-
-  private formatFileContexts(files: AiFileContext[]): string {
-    let text = '\n\n[当前关联文件]\n';
-    for (const file of files) {
-      text += `- ${file.displayName} (${file.mimeType}, ${file.sizeBytes} bytes)`;
-      if (file.summary !== undefined && file.summary.length > 0) {
-        text += `\n  摘要: ${file.summary}`;
-      }
-      if (file.extractedText !== undefined && file.extractedText.length > 0) {
-        text += `\n  内容:\n${file.extractedText}`;
-      }
-      text += '\n';
-    }
-    text += '[当前关联文件结束]';
-    return text;
   }
 }

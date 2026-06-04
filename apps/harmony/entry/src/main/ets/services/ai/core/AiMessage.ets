@@ -10,6 +10,8 @@ export interface AiFileContext {
   localUri?: string;
   extractedText?: string;
   summary?: string;
+  parseStatus?: string;
+  errorMessage?: string;
 }
 
 export interface AiContentPart {
@@ -127,12 +129,20 @@ export class AiMessageFormatter {
   }
 
   private static formatFileContext(file: AiFileContext): string {
-    let text = `\n\n[文件上下文]\n文件名: ${file.displayName}\nMIME: ${file.mimeType}\n大小: ${file.sizeBytes}`;
+    let text = `\n\n[文件上下文]\n文件名: ${file.displayName}\nMIME: ${file.mimeType}\n大小: ${file.sizeBytes} bytes`;
+    if (file.parseStatus !== undefined && file.parseStatus.length > 0) {
+      text += `\n解析状态: ${file.parseStatus}`;
+    }
     if (file.summary !== undefined && file.summary.length > 0) {
       text += `\n摘要: ${file.summary}`;
     }
     if (file.extractedText !== undefined && file.extractedText.length > 0) {
       text += `\n内容:\n${file.extractedText}`;
+    } else {
+      text += '\n内容: [未提取到文本内容]';
+      if (file.errorMessage !== undefined && file.errorMessage.length > 0) {
+        text += `\n原因: ${file.errorMessage}`;
+      }
     }
     text += '\n[文件上下文结束]';
     return text;

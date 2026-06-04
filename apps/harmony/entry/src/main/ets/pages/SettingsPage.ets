@@ -11,6 +11,7 @@ import {
 import { AppSpacing, AppColors, AppTypography, AppRadius, AppSize } from '../common/Theme';
 import { SettingsViewModel, CachePolicy } from '../viewmodels/SettingsViewModel';
 import router from '@ohos.router';
+import DevicePage from './DevicePage';
 
 @Component
 export default struct SettingsPage {
@@ -28,6 +29,7 @@ export default struct SettingsPage {
   @State accountPassword: string = '';
   @State accountPasswordLoginEnabled: boolean = false;
   @State selectedSettingsSection: number = 0;
+  @State transitionProgress: number = 1;
 
   aboutToAppear() {
     this.syncSettings(false);
@@ -103,8 +105,18 @@ export default struct SettingsPage {
     if (this.selectedSettingsSection === 6) return '诊断信息';
     if (this.selectedSettingsSection === 7) return '隐私与安全加密';
     if (this.selectedSettingsSection === 8) return '存储与缓存清理';
-    if (this.selectedSettingsSection === 9) return '群组';
+    if (this.selectedSettingsSection === 9) return '设备扫描';
     return '系统设置';
+  }
+
+  private switchSettingsSection(index: number) {
+    this.transitionProgress = 0;
+    animateTo({ duration: 120, curve: Curve.EaseOut }, () => {
+      this.selectedSettingsSection = index;
+    });
+    animateTo({ duration: 240, curve: Curve.EaseOut }, () => {
+      this.transitionProgress = 1;
+    });
   }
 
   @Builder
@@ -133,13 +145,17 @@ export default struct SettingsPage {
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
 
-            Text(tag)
-              .fontSize(9)
-              .fontWeight(FontWeight.Bold)
-              .fontColor(mainColor)
-              .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-              .backgroundColor(bgColor)
-              .borderRadius(AppRadius.SM)
+            Stack() {
+              Image($r('app.media.cd_icon_done'))
+                .width(12)
+                .height(12)
+                .fillColor(mainColor)
+                .rotate({ angle: 270 })
+            }
+            .width(28)
+            .height(28)
+            .backgroundColor(bgColor)
+            .borderRadius(AppRadius.MD)
           }
           .width('100%')
 
@@ -152,17 +168,11 @@ export default struct SettingsPage {
         }
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
-
-        Image($r('app.media.cd_icon_done'))
-          .width(14)
-          .height(14)
-          .fillColor(AppColors.MUTED)
-          .rotate({ angle: 270 })
       }
       .width('100%')
       .alignItems(VerticalAlign.Center)
       .onClick(() => {
-        this.selectedSettingsSection = index;
+        this.switchSettingsSection(index);
       })
     }
   }
@@ -184,6 +194,7 @@ export default struct SettingsPage {
     .padding({ top: AppSpacing.XL, bottom: AppSpacing.LG })
 
     this.settingEntry(1, '设备身份与连接', '查看设备指纹，配置局域网优先直传策略', $r('app.media.cd_icon_devices'), AppColors.PRIMARY, AppColors.PRIMARY_SOFT, 'IDENTITY')
+    this.settingEntry(9, '设备扫描', '扫描局域网节点，手动添加电脑或确认可信设备', $r('app.media.cd_icon_devices'), AppColors.PRIMARY_SELECTED, AppColors.PRIMARY_SOFT, 'DEVICE')
     this.settingEntry(2, '电脑浏览器扫码配对', '输入网页端六位登录码，授权电脑浏览器登录', $r('app.media.cd_icon_link'), AppColors.ACCENT, AppColors.ACCENT_SOFT, 'PAIR')
     this.settingEntry(3, '账号安全', '创建账号、登录已有账号，并控制密码登录能力', $r('app.media.cd_icon_lock'), AppColors.WARNING, AppColors.WARNING_SOFT, 'ACCOUNT')
     this.settingEntry(4, '扫码与解析', '打开系统相机或粘贴协议文本进行调试解析', $r('app.media.cd_icon_search'), AppColors.SUCCESS, AppColors.SUCCESS_SOFT, 'SCAN')
@@ -191,7 +202,6 @@ export default struct SettingsPage {
     this.settingEntry(6, '诊断信息', '查看本地目录、索引数量和中转源数量', $r('app.media.cd_icon_server'), AppColors.TEXT_SECONDARY, AppColors.SURFACE_MUTED, 'DIAG')
     this.settingEntry(7, '隐私与安全加密', '配置端到端加密传输，降低公网中转明文风险', $r('app.media.cd_icon_lock'), AppColors.SUCCESS, AppColors.SUCCESS_SOFT, 'E2EE')
     this.settingEntry(8, '存储与缓存清理', '设置提取链接默认时效与本地缓存清理策略', $r('app.media.cd_icon_library'), AppColors.ACCENT, AppColors.ACCENT_SOFT, 'CACHE')
-    this.settingEntry(9, '群组', '像聊天一样和好友共享加密文件流', $r('app.media.cd_icon_share'), AppColors.PRIMARY, AppColors.PRIMARY_SOFT, 'GROUP')
   }
 
   // 连接策略与身份标识卡片
@@ -510,49 +520,27 @@ export default struct SettingsPage {
   }
 
   @Builder
-  groupSection() {
-    CdPanel({ hasShadow: true }) {
-      Row() {
-        Column({ space: 4 }) {
-          Text('打开群组')
-            .fontSize(AppTypography.BODY_SMALL)
-            .fontWeight(FontWeight.Bold)
-            .fontColor(AppColors.TEXT)
-
-          Text('创建群、邀请好友、共享加密消息和文件')
-            .fontSize(11)
-            .fontColor(AppColors.TEXT_SECONDARY)
+  settingsDetail() {
+    if (this.selectedSettingsSection !== 9) {
+      CdTopBar({
+        title: this.settingsTitle(),
+        subtitle: '设置详情',
+        leadingText: '返回',
+        onLeadingTap: () => {
+          this.switchSettingsSection(0);
         }
-        .layoutWeight(1)
-        .alignItems(HorizontalAlign.Start)
-
-        Image($r('app.media.cd_icon_done'))
-          .width(14)
-          .height(14)
-          .fillColor(AppColors.MUTED)
-          .rotate({ angle: 270 })
-      }
-      .width('100%')
-      .padding({ top: AppSpacing.SM, bottom: AppSpacing.SM })
-      .onClick(() => {
-        router.pushUrl({ url: 'pages/GroupTestPage' });
       })
     }
-  }
-
-  @Builder
-  settingsDetail() {
-    CdTopBar({
-      title: this.settingsTitle(),
-      subtitle: '设置详情',
-      leadingText: '返回',
-      onLeadingTap: () => {
-        this.selectedSettingsSection = 0;
-      }
-    })
 
     if (this.selectedSettingsSection === 1) {
       this.identitySection()
+    } else if (this.selectedSettingsSection === 9) {
+      DevicePage({
+        showBack: true,
+        onBack: () => {
+          this.switchSettingsSection(0);
+        }
+      })
     } else if (this.selectedSettingsSection === 2) {
       this.webPairSection()
     } else if (this.selectedSettingsSection === 3) {
@@ -567,8 +555,6 @@ export default struct SettingsPage {
       this.securitySection()
     } else if (this.selectedSettingsSection === 8) {
       this.cacheSection()
-    } else if (this.selectedSettingsSection === 9) {
-      this.groupSection()
     }
   }
 
@@ -576,18 +562,30 @@ export default struct SettingsPage {
     Stack({ alignContent: Alignment.TopStart }) {
       CdScrollContainer({ showScrollBar: true, backgroundStyle: 'settings' }) {
         if (this.selectedSettingsSection === 0) {
-          if (this.showBack) {
-            CdTopBar({
-              title: '',
-              leadingText: '返回',
-              onLeadingTap: () => {
-                router.back();
-              }
-            })
+          Column() {
+            if (this.showBack) {
+              CdTopBar({
+                title: '',
+                leadingText: '返回',
+                onLeadingTap: () => {
+                  router.back();
+                }
+              })
+            }
+            this.settingsOverview()
           }
-          this.settingsOverview()
+          .width('100%')
+          .opacity(this.transitionProgress)
+          .translate({ x: (1 - this.transitionProgress) * -14, y: 0 })
+          .animation({ duration: 220, curve: Curve.EaseOut })
         } else {
-          this.settingsDetail()
+          Column() {
+            this.settingsDetail()
+          }
+          .width('100%')
+          .opacity(this.transitionProgress)
+          .translate({ x: (1 - this.transitionProgress) * 18, y: 0 })
+          .animation({ duration: 220, curve: Curve.EaseOut })
         }
       }
     }

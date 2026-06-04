@@ -1,5 +1,7 @@
 import type { AiConversation, AiConversationSummary, AiMessage, AiProviderConfig, SseConnection } from '../services/ai';
 import { aiAssistantService, aiConfigRepository, aiMemoryRepository, DefaultAiProviderConfig } from '../services/ai';
+import { LocalFileEntry } from '../models/LocalFileEntry';
+import { localLibraryService } from '../services/local';
 
 export type AiChatRole = 'user' | 'assistant';
 
@@ -43,6 +45,7 @@ export class AiChatViewModel {
 
   private conversationId: string = '';
   private activeConnection?: SseConnection;
+  private contextFiles: LocalFileEntry[] = [];
 
   getCurrentConversationId(): string {
     return this.conversationId;
@@ -125,6 +128,47 @@ export class AiChatViewModel {
     });
   }
 
+  getContextFiles(): LocalFileEntry[] {
+    return this.copyFiles(this.contextFiles);
+  }
+
+  getLibraryFiles(): LocalFileEntry[] {
+    return localLibraryService.listFiles();
+  }
+
+  addContextFiles(files: LocalFileEntry[]): void {
+    const nextFiles = this.copyFiles(this.contextFiles);
+    files.forEach((file: LocalFileEntry) => {
+      if (!nextFiles.some((item: LocalFileEntry) => item.id === file.id)) {
+        nextFiles.push(this.copyFile(file));
+      }
+    });
+    this.contextFiles = nextFiles;
+  }
+
+  addContextFilesByIds(ids: string[]): void {
+    if (ids.length === 0) {
+      return;
+    }
+    const libraryFiles = localLibraryService.listFiles();
+    const selectedFiles: LocalFileEntry[] = [];
+    ids.forEach((id: string) => {
+      const file = libraryFiles.find((item: LocalFileEntry) => item.id === id);
+      if (file !== undefined) {
+        selectedFiles.push(file);
+      }
+    });
+    this.addContextFiles(selectedFiles);
+  }
+
+  removeContextFile(id: string): void {
+    this.contextFiles = this.contextFiles.filter((file: LocalFileEntry) => file.id !== id);
+  }
+
+  clearContextFiles(): void {
+    this.contextFiles = [];
+  }
+
   send(text: string, onUpdate: () => void): void {
     const content = text.trim();
     if (content.length === 0 || this.loading) {
@@ -133,6 +177,8 @@ export class AiChatViewModel {
     this.ensureConversation();
     this.errorMessage = '';
     this.loading = true;
+    const filesForRequest = this.copyFiles(this.contextFiles);
+    this.contextFiles = [];
 
     const assistantId = this.createId('assistant');
     this.messages.push({
@@ -151,7 +197,8 @@ export class AiChatViewModel {
 
     const connection = aiAssistantService.streamMessage({
       conversationId: this.conversationId,
-      content: content
+      content: content,
+      files: filesForRequest
     }, {
       onChunk: (chunk: string) => {
         this.appendToAssistant(assistantId, chunk);
@@ -201,6 +248,7 @@ export class AiChatViewModel {
     this.conversationId = '';
     this.loading = false;
     this.errorMessage = '';
+    this.contextFiles = [];
     this.messages = this.createWelcomeMessages();
   }
 
@@ -266,6 +314,25 @@ export class AiChatViewModel {
 
   private createId(prefix: string): string {
     return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+  }
+
+  private copyFiles(files: LocalFileEntry[]): LocalFileEntry[] {
+    return files.map((file: LocalFileEntry) => this.copyFile(file));
+  }
+
+  private copyFile(file: LocalFileEntry): LocalFileEntry {
+    return {
+      id: file.id,
+      displayName: file.displayName,
+      type: file.type,
+      contentType: file.contentType,
+      sizeBytes: file.sizeBytes,
+      localUri: file.localUri,
+      lastSharedAt: file.lastSharedAt,
+      shareCount: file.shareCount,
+      remoteCached: file.remoteCached,
+      encrypted: file.encrypted
+    };
   }
 
   private createWelcomeMessages(): AiChatMessage[] {

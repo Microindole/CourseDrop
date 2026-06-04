@@ -47,6 +47,18 @@ export class LocalLibraryViewModel {
     return attachedCount > 0 ? `已加入分享草稿 ${attachedCount} 项` : '所选内容已在分享草稿中';
   }
 
+  getFilesByIds(selectedIds: string[]): LocalFileEntry[] {
+    const files = this.loadFiles();
+    const selectedFiles: LocalFileEntry[] = [];
+    selectedIds.forEach((id: string) => {
+      const file = files.find((item: LocalFileEntry) => item.id === id);
+      if (file !== undefined) {
+        selectedFiles.push(file);
+      }
+    });
+    return selectedFiles;
+  }
+
   deleteSelected(selectedIds: string[]): string {
     const selectedCount = selectedIds.length;
     localLibraryService.removeFiles(selectedIds);
