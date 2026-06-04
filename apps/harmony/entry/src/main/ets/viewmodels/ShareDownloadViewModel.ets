@@ -49,6 +49,9 @@ export class ShareDownloadViewModel {
       const task = await transferService.downloadShareItem({
         code: this.code,
         itemId: item.id,
+        encrypted: item.encrypted,
+        displayName: item.displayName,
+        contentType: item.contentType,
         fingerprintId: identity === undefined ? undefined : identity.fingerprintId,
         accountId: identity === undefined || identity.accountId.length === 0 ? undefined : identity.accountId,
         e2eeKeyMaterial: this.findKey(item.id).keyMaterial,

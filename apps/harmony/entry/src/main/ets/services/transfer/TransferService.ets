@@ -24,6 +24,9 @@ export interface UploadLocalFileCommand {
 export interface DownloadShareItemCommand {
   code: string;
   itemId: string;
+  encrypted: boolean;
+  displayName: string;
+  contentType: string;
   fingerprintId?: string;
   accountId?: string;
   e2eeKeyMaterial?: string;
@@ -127,37 +130,35 @@ export class DefaultTransferService implements TransferService {
     const task = this.taskService.createTask(command.itemId, 'DOWNLOAD', 'RELAY');
     this.taskService.start(task.id);
     try {
+      const incomingRoot = this.fileStore.incomingRoot();
+      const encryptedDownloadRoot = command.encrypted ? this.fileStore.cacheRoot() : incomingRoot;
       const result = await this.transferApi.downloadShareItem({
         code: command.code,
         itemId: command.itemId,
-        targetDirectory: this.fileStore.incomingRoot(),
+        displayName: command.displayName,
+        contentType: command.contentType,
+        targetDirectory: encryptedDownloadRoot,
         fingerprintId: command.fingerprintId,
         accountId: command.accountId
       });
       let localUri = result.localUri;
       let sizeBytes = result.sizeBytes;
-      let encrypted = false;
-      if (
-        command.e2eeKeyMaterial !== undefined &&
-        command.e2eeKeyMaterial.length > 0 &&
-        command.e2eeNonce !== undefined &&
-        command.e2eeNonce.length > 0 &&
-        command.e2eeAuthTag !== undefined &&
-        command.e2eeAuthTag.length > 0
-      ) {
+      if (command.encrypted && !this.hasCompleteE2eeKey(command)) {
+        throw new Error('该文件是端到端加密文件，缺少分享链接中的解密密钥 #cdkey');
+      }
+      if (command.encrypted) {
         const decrypted = await encryptionService.decryptFile({
           encryptedUri: result.localUri,
-          targetDirectory: this.fileStore.incomingRoot(),
+          targetDirectory: incomingRoot,
           algorithm: 'AES-256-GCM',
           kdfAlgorithm: 'NONE-RAW-KEY',
           kdfSalt: '',
-          nonce: command.e2eeNonce,
-          keyMaterial: command.e2eeKeyMaterial,
-          authTag: command.e2eeAuthTag
+          nonce: command.e2eeNonce === undefined ? '' : command.e2eeNonce,
+          keyMaterial: command.e2eeKeyMaterial === undefined ? '' : command.e2eeKeyMaterial,
+          authTag: command.e2eeAuthTag === undefined ? '' : command.e2eeAuthTag
         });
         localUri = decrypted.plainUri;
         sizeBytes = decrypted.plainSizeBytes;
-        encrypted = true;
       }
       this.fileIndexRepository.save({
         id: `download-${Date.now()}`,
@@ -168,7 +169,7 @@ export class DefaultTransferService implements TransferService {
         localUri: localUri,
         shareCount: 0,
         remoteCached: false,
-        encrypted: encrypted
+        encrypted: false
       });
       return this.taskService.complete(task.id);
     } catch (error) {
@@ -182,6 +183,15 @@ export class DefaultTransferService implements TransferService {
 
   listSessionTasks(sessionId: string): TransferTask[] {
     return this.taskService.listBySession(sessionId);
+  }
+
+  private hasCompleteE2eeKey(command: DownloadShareItemCommand): boolean {
+    return command.e2eeKeyMaterial !== undefined &&
+      command.e2eeKeyMaterial.length > 0 &&
+      command.e2eeNonce !== undefined &&
+      command.e2eeNonce.length > 0 &&
+      command.e2eeAuthTag !== undefined &&
+      command.e2eeAuthTag.length > 0;
   }
 
   private requireLocalFile(localFileId: string): LocalFileEntry {

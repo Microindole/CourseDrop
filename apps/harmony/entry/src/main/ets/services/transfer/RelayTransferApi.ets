@@ -85,14 +85,14 @@ export class HttpRelayTransferApi implements RelayTransferApi {
         throw new Error(`HTTP ${response.responseCode}`);
       }
 
-      const displayName = `downloaded-${request.itemId}`;
-      const contentType = 'application/octet-stream';
+      const displayName = request.displayName.length === 0 ? `downloaded-${request.itemId}` : request.displayName;
+      const contentType = request.contentType.length === 0 ? 'application/octet-stream' : request.contentType;
 
       const buffer = response.result as ArrayBuffer;
       const sizeBytes = buffer.byteLength;
 
       this.fileSystemService.ensureDirectory(request.targetDirectory);
-      const targetPath = `${request.targetDirectory}/${Date.now()}-${displayName}`;
+      const targetPath = `${request.targetDirectory}/${Date.now()}-${this.escapeLocalFileName(displayName)}`;
 
       const file = fileIo.openSync(targetPath, fileIo.OpenMode.CREATE | fileIo.OpenMode.READ_WRITE);
       try {
@@ -156,6 +156,10 @@ export class HttpRelayTransferApi implements RelayTransferApi {
 
   private escapeMultipartValue(value: string): string {
     return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r/g, '').replace(/\n/g, '');
+  }
+
+  private escapeLocalFileName(value: string): string {
+    return value.replace(/\//g, '_').replace(/\\/g, '_').replace(/:/g, '_').replace(/\r/g, '').replace(/\n/g, '');
   }
 
   private toUtf8(text: string): ArrayBuffer {

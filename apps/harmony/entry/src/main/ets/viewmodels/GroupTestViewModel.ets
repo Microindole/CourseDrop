@@ -2,10 +2,11 @@ import { AppConfig } from '../common/AppConfig';
 import {
   GroupMessage,
   GroupSession,
+  PlainFilePayload,
   PlainTextPayload
 } from '../models/Group';
 import { apiClient } from '../services/ApiClient';
-import { groupCryptoService, groupMessageService, groupService } from '../services/group';
+import { groupCryptoService, groupFileWorkflow, groupMessageService, groupService } from '../services/group';
 import { identityService, LocalIdentity } from '../services/identity';
 
 export class GroupTestViewModel {
@@ -14,6 +15,7 @@ export class GroupTestViewModel {
   messageText: string = '这是一条群组密文测试消息';
   lastActionText: string = '群组测试页未接入主流程';
   errorMessage: string = '';
+  lastReceivedFileUri: string = '';
   currentIdentity?: LocalIdentity;
   currentGroup?: GroupSession;
   messages: GroupMessage[] = [];
@@ -65,6 +67,28 @@ export class GroupTestViewModel {
     this.errorMessage = '';
   }
 
+  async sendFileMessage(): Promise<void> {
+    const group = this.ensureGroup();
+    const result = await groupFileWorkflow.pickEncryptUploadAndSend(group.id, group.config.expiryHours);
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+    this.messages = groupMessageService.listLocalMessages(group.id);
+    this.lastActionText = result.message;
+    this.errorMessage = '';
+  }
+
+  async receiveLatestFile(): Promise<void> {
+    const fileMessage = this.findLatestFileMessage();
+    const result = await groupFileWorkflow.receiveFileMessage(fileMessage.id);
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+    this.lastReceivedFileUri = result.localUri;
+    this.lastActionText = result.message;
+    this.errorMessage = '';
+  }
+
   async describeMessages(): Promise<string[]> {
     const group = this.ensureGroup();
     const lines: string[] = [];
@@ -77,6 +101,14 @@ export class GroupTestViewModel {
           authTag: message.authTag
         }, group.groupKeyMaterial);
         lines.push(`${message.senderId}: ${payload.text}`);
+      } else if (message.type === 'FILE') {
+        const payload: PlainFilePayload = await groupCryptoService.decryptFilePayload({
+          ciphertext: message.encryptedPayload,
+          iv: message.iv,
+          authTag: message.authTag
+        }, group.groupKeyMaterial);
+        const plainSize = payload.plainSizeBytes === undefined ? payload.sizeBytes : payload.plainSizeBytes;
+        lines.push(`${message.senderId}: 文件 ${payload.displayName} · ${plainSize} bytes`);
       } else {
         lines.push(`${message.senderId}: ${message.type} ${message.id}`);
       }
@@ -103,5 +135,16 @@ export class GroupTestViewModel {
     }
     this.currentGroup = groups[0];
     return this.currentGroup;
+  }
+
+  private findLatestFileMessage(): GroupMessage {
+    const group = this.ensureGroup();
+    const messages = groupMessageService.listLocalMessages(group.id);
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      if (messages[index].type === 'FILE') {
+        return messages[index];
+      }
+    }
+    throw new Error('暂无可下载的群组文件消息');
   }
 }

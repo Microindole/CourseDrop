@@ -28,10 +28,11 @@ export class CourseDropEncryptionService implements EncryptionService {
       await cipher.init(cryptoFramework.CryptoMode.ENCRYPT_MODE, key, params);
       const input: cryptoFramework.DataBlob = { data: plainData };
       const output = await cipher.doFinal(input);
+      const gcmOutput = this.normalizeGcmEncryptOutput(output.data, params.authTag.data, plainData.byteLength);
 
       const plainPath = this.uriToPath(plan.sourceUri);
       const encryptedPath = `${plainPath}.cdenc`;
-      this.writeFile(encryptedPath, this.toArrayBuffer(output.data));
+      this.writeFile(encryptedPath, this.toArrayBuffer(gcmOutput.ciphertext));
 
       return {
         encryptedUri: encryptedPath,
@@ -40,7 +41,7 @@ export class CourseDropEncryptionService implements EncryptionService {
         kdfSalt: '',
         nonce: this.toHex(nonce.data),
         keyMaterial: this.toHex(key.getEncoded().data),
-        authTag: this.toHex(params.authTag.data),
+        authTag: this.toHex(gcmOutput.authTag),
         plainSizeBytes: plan.plainSizeBytes,
         sha256: await this.sha256(plainData)
       };
@@ -66,8 +67,12 @@ export class CourseDropEncryptionService implements EncryptionService {
       };
       const cipher = cryptoFramework.createCipher('AES256|GCM|NoPadding');
       await cipher.init(cryptoFramework.CryptoMode.DECRYPT_MODE, key, params);
-      const input: cryptoFramework.DataBlob = { data: encryptedData };
-      const output = await cipher.doFinal(input);
+      let output: cryptoFramework.DataBlob;
+      try {
+        output = await cipher.doFinal({ data: encryptedData });
+      } catch (error) {
+        output = await this.decryptLegacyCombinedGcm(encryptedData, plan);
+      }
 
       const encryptedName = this.fileNameFromUri(plan.encryptedUri).replace(/\.cdenc$/, '');
       const targetPath = `${plan.targetDirectory.replace(/\/$/, '')}/decrypted-${encryptedName}`;
@@ -109,6 +114,54 @@ export class CourseDropEncryptionService implements EncryptionService {
     await md.update(input);
     const digest = await md.digest();
     return this.toHex(digest.data);
+  }
+
+  private normalizeGcmEncryptOutput(output: Uint8Array, authTag: Uint8Array, plainSizeBytes: number): GcmCipherParts {
+    if (output.byteLength >= plainSizeBytes + 16) {
+      return {
+        ciphertext: output.slice(0, output.byteLength - 16),
+        authTag: output.slice(output.byteLength - 16)
+      };
+    }
+    if (this.isAllZero(authTag) && output.byteLength >= 16) {
+      return {
+        ciphertext: output.slice(0, output.byteLength - 16),
+        authTag: output.slice(output.byteLength - 16)
+      };
+    }
+    return {
+      ciphertext: output,
+      authTag: authTag
+    };
+  }
+
+  private async decryptLegacyCombinedGcm(encryptedData: Uint8Array, plan: DecryptionPlan): Promise<cryptoFramework.DataBlob> {
+    if (encryptedData.byteLength <= 16) {
+      throw new Error('密文长度不足');
+    }
+    const ciphertext = encryptedData.slice(0, encryptedData.byteLength - 16);
+    const authTag = encryptedData.slice(encryptedData.byteLength - 16);
+    const keyData: cryptoFramework.DataBlob = { data: this.fromHex(plan.keyMaterial) };
+    const keyGenerator = cryptoFramework.createSymKeyGenerator('AES256');
+    const key = await keyGenerator.convertKey(keyData);
+    const params: cryptoFramework.GcmParamsSpec = {
+      algName: 'GcmParamsSpec',
+      iv: { data: this.fromHex(plan.nonce) },
+      aad: { data: this.toBytes('coursedrop:file:v1') },
+      authTag: { data: this.isAllZero(this.fromHex(plan.authTag)) ? authTag : this.fromHex(plan.authTag) }
+    };
+    const cipher = cryptoFramework.createCipher('AES256|GCM|NoPadding');
+    await cipher.init(cryptoFramework.CryptoMode.DECRYPT_MODE, key, params);
+    return await cipher.doFinal({ data: ciphertext });
+  }
+
+  private isAllZero(data: Uint8Array): boolean {
+    for (let index = 0; index < data.byteLength; index += 1) {
+      if (data[index] !== 0) {
+        return false;
+      }
+    }
+    return data.byteLength > 0;
   }
 
   private uriToPath(uri: string): string {
@@ -157,4 +210,9 @@ export class CourseDropEncryptionService implements EncryptionService {
     }
     return bytes;
   }
+}
+
+interface GcmCipherParts {
+  ciphertext: Uint8Array;
+  authTag: Uint8Array;
 }

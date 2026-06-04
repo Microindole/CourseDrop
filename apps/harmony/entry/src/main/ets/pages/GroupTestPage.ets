@@ -25,6 +25,7 @@ struct GroupTestPage {
   @State errorMessage: string = '';
   @State groupId: string = '';
   @State fingerprintId: string = '';
+  @State receivedFileUri: string = '';
   @State busy: boolean = false;
   @State messages: GroupMessage[] = [];
   @State messageLines: string[] = [];
@@ -35,6 +36,7 @@ struct GroupTestPage {
     this.errorMessage = this.viewModel.errorMessage;
     this.groupId = group === undefined ? '' : group.id;
     this.fingerprintId = this.viewModel.currentIdentity === undefined ? '' : this.viewModel.currentIdentity.fingerprintId;
+    this.receivedFileUri = this.viewModel.lastReceivedFileUri;
     this.messages = this.viewModel.messages;
   }
 
@@ -159,6 +161,32 @@ struct GroupTestPage {
               })
               .layoutWeight(1)
             }
+
+            Row({ space: AppSpacing.SM }) {
+              CdButton({
+                label: '发送文件',
+                variant: 'tonal',
+                interactive: !this.busy,
+                onTap: () => {
+                  this.runTask(async () => {
+                    await this.viewModel.sendFileMessage();
+                  });
+                }
+              })
+              .layoutWeight(1)
+
+              CdButton({
+                label: '下载文件',
+                variant: 'tonal',
+                interactive: !this.busy,
+                onTap: () => {
+                  this.runTask(async () => {
+                    await this.viewModel.receiveLatestFile();
+                  });
+                }
+              })
+              .layoutWeight(1)
+            }
           }
           .width('100%')
         }
@@ -170,6 +198,7 @@ struct GroupTestPage {
             CdInfoRow({ title: 'fingerprintId', value: this.fingerprintId.length === 0 ? '未注册' : this.fingerprintId })
             CdInfoRow({ title: 'groupId', value: this.groupId.length === 0 ? '未创建' : this.groupId })
             CdInfoRow({ title: '本地消息数', value: `${this.messages.length}` })
+            CdInfoRow({ title: '最近接收文件', value: this.receivedFileUri.length === 0 ? '未接收' : this.receivedFileUri })
           }
           .width('100%')
         }

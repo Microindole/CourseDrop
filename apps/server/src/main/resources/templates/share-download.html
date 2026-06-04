@@ -416,22 +416,26 @@
 
     document.querySelectorAll(".download-link").forEach((link) => {
       link.addEventListener("click", async (event) => {
-        if (link.dataset.encrypted !== "true" || !key) {
+        if (link.dataset.encrypted !== "true") {
           return;
         }
         event.preventDefault();
+        if (!key) {
+          showToast("这是端到端加密文件，请使用带 #cdkey 的完整分享链接下载。");
+          return;
+        }
         try {
           const itemKey = resolveItemKey(link, key, keyMap);
           const response = await fetch(link.href, { credentials: "include" });
           if (!response.ok) {
-            window.location.href = link.href;
+            showToast("下载失败，请先完成身份验证或稍后重试。");
             return;
           }
           const cipherBytes = new Uint8Array(await response.arrayBuffer());
           const plainBytes = await decryptAesGcm(cipherBytes, itemKey.keyMaterial, itemKey.nonce, itemKey.authTag);
           saveBytes(plainBytes, link.dataset.filename || "coursedrop-file");
         } catch (error) {
-          window.location.href = link.href;
+          showToast("解密失败，请确认使用的是完整分享链接。");
         }
       });
     });
@@ -470,7 +474,7 @@
       const nonceParts = (encodedNonce || "").split(".");
       const nonce = nonceParts[0] || encodedNonce;
       const authTag = encodedAuthTag || nonceParts[1] || "";
-      const encryptedBytes = authTag ? concatBytes(cipherBytes, decodeBytes(authTag)) : cipherBytes;
+      const additionalData = new TextEncoder().encode("coursedrop:file:v1");
       const cryptoKey = await crypto.subtle.importKey(
         "raw",
         decodeBytes(encodedKey),
@@ -478,11 +482,34 @@
         false,
         ["decrypt"]
       );
-      return new Uint8Array(await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: decodeBytes(nonce) },
-        cryptoKey,
-        encryptedBytes
-      ));
+      const nonceBytes = decodeBytes(nonce);
+      const candidates = buildGcmCandidates(cipherBytes, authTag);
+      const params = [
+        { name: "AES-GCM", iv: nonceBytes, additionalData },
+        { name: "AES-GCM", iv: nonceBytes }
+      ];
+      let lastError;
+      for (const algorithm of params) {
+        for (const candidate of candidates) {
+          try {
+            return new Uint8Array(await crypto.subtle.decrypt(algorithm, cryptoKey, candidate));
+          } catch (error) {
+            lastError = error;
+          }
+        }
+      }
+      throw lastError || new Error("decrypt failed");
+    }
+
+    function buildGcmCandidates(cipherBytes, encodedAuthTag) {
+      if (!encodedAuthTag) {
+        return [cipherBytes];
+      }
+      const authTag = decodeBytes(encodedAuthTag);
+      return [
+        concatBytes(cipherBytes, authTag),
+        cipherBytes
+      ];
     }
 
     function decodeBytes(value) {
@@ -514,7 +541,7 @@
     }
 
     function saveBytes(bytes, filename) {
-      const blob = new Blob([bytes]);
+      const blob = new Blob([bytes], { type: "application/octet-stream" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -596,8 +623,10 @@
         const isExternal = url.startsWith("http://") || url.startsWith("https://") || url.startsWith("//");
         const isNewTab = anchor.getAttribute("target") === "_blank";
         const isMailOrTel = url.startsWith("mailto:") || url.startsWith("tel:");
+        const isBlob = url.startsWith("blob:");
+        const isDownload = anchor.hasAttribute("download");
 
-        if (!isAnchor && !isExternal && !isNewTab && !isMailOrTel) {
+        if (!isAnchor && !isExternal && !isNewTab && !isMailOrTel && !isBlob && !isDownload) {
           e.preventDefault();
           if (mainEl) {
             mainEl.classList.remove("apple-transition-enter");

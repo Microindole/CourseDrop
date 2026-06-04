@@ -3,6 +3,7 @@ import {
   PlainFilePayload,
   PlainTextPayload
 } from '../../models/Group';
+import { EncryptionService } from '../crypto';
 import { identityService } from '../identity';
 import { GroupCryptoService } from './GroupCryptoService';
 import { GroupNetworkContract } from './GroupNetworkContract';
@@ -23,13 +24,20 @@ export interface SendGroupTextMessageCommand {
 
 export interface ReceiveGroupFileCommand {
   messageId: string;
+  encryptedDirectory: string;
   targetDirectory: string;
+}
+
+export interface ReceiveGroupFileResult {
+  localUri: string;
+  sizeBytes: number;
+  payload: PlainFilePayload;
 }
 
 export interface GroupMessageService {
   sendFileMessage(command: SendGroupFileMessageCommand): Promise<GroupMessage>;
   sendTextMessage(command: SendGroupTextMessageCommand): Promise<GroupMessage>;
-  receiveGroupFile(command: ReceiveGroupFileCommand): Promise<string>;
+  receiveGroupFile(command: ReceiveGroupFileCommand): Promise<ReceiveGroupFileResult>;
   syncGroupMessages(groupId: string): Promise<GroupMessage[]>;
   listLocalMessages(groupId: string): GroupMessage[];
 }
@@ -39,17 +47,20 @@ export class DefaultGroupMessageService implements GroupMessageService {
   private messageRepository: LocalGroupMessageRepository;
   private cryptoService: GroupCryptoService;
   private networkContract: GroupNetworkContract;
+  private encryptionService: EncryptionService;
 
   constructor(
     groupRepository: LocalGroupRepository,
     messageRepository: LocalGroupMessageRepository,
     cryptoService: GroupCryptoService,
-    networkContract: GroupNetworkContract
+    networkContract: GroupNetworkContract,
+    encryptionService: EncryptionService
   ) {
     this.groupRepository = groupRepository;
     this.messageRepository = messageRepository;
     this.cryptoService = cryptoService;
     this.networkContract = networkContract;
+    this.encryptionService = encryptionService;
   }
 
   async sendFileMessage(command: SendGroupFileMessageCommand): Promise<GroupMessage> {
@@ -123,8 +134,43 @@ export class DefaultGroupMessageService implements GroupMessageService {
   }
 
 
-  async receiveGroupFile(_command: ReceiveGroupFileCommand): Promise<string> {
-    throw new Error('群组文件下载与解密流程尚未接入');
+  async receiveGroupFile(command: ReceiveGroupFileCommand): Promise<ReceiveGroupFileResult> {
+    const message = this.messageRepository.findById(command.messageId);
+    if (message === undefined) {
+      throw new Error('群组文件消息不存在');
+    }
+    if (message.type !== 'FILE') {
+      throw new Error('该消息不是文件消息');
+    }
+    const group = this.groupRepository.findById(message.groupId);
+    if (group === undefined) {
+      throw new Error('群组不存在');
+    }
+    const payload = await this.cryptoService.decryptFilePayload({
+      ciphertext: message.encryptedPayload,
+      iv: message.iv,
+      authTag: message.authTag
+    }, group.groupKeyMaterial);
+    const downloaded = await this.networkContract.downloadFile({
+      groupId: message.groupId,
+      fileId: payload.fileId,
+      targetDirectory: command.encryptedDirectory
+    });
+    const decrypted = await this.encryptionService.decryptFile({
+      encryptedUri: downloaded.localUri,
+      targetDirectory: command.targetDirectory,
+      algorithm: payload.encryptionAlgorithm,
+      kdfAlgorithm: payload.kdfAlgorithm,
+      kdfSalt: payload.kdfSalt,
+      nonce: payload.fileNonce,
+      keyMaterial: payload.fileKeyMaterial,
+      authTag: payload.fileAuthTag
+    });
+    return {
+      localUri: decrypted.plainUri,
+      sizeBytes: decrypted.plainSizeBytes,
+      payload: payload
+    };
   }
 
   async syncGroupMessages(groupId: string): Promise<GroupMessage[]> {

@@ -141,11 +141,13 @@ export class CourseDropGroupCryptoService implements GroupCryptoService {
     };
     const cipher = cryptoFramework.createCipher('AES256|GCM|NoPadding');
     await cipher.init(cryptoFramework.CryptoMode.ENCRYPT_MODE, key, params);
-    const output = await cipher.doFinal({ data: this.toUtf8(plainText) });
+    const plainData = this.toUtf8(plainText);
+    const output = await cipher.doFinal({ data: plainData });
+    const gcmOutput = this.normalizeGcmEncryptOutput(output.data, params.authTag.data, plainData.byteLength);
     return {
-      ciphertext: this.toHex(output.data),
+      ciphertext: this.toHex(gcmOutput.ciphertext),
       iv: this.toHex(nonce.data),
-      authTag: this.toHex(params.authTag.data)
+      authTag: this.toHex(gcmOutput.authTag)
     };
   }
 
@@ -161,8 +163,66 @@ export class CourseDropGroupCryptoService implements GroupCryptoService {
     };
     const cipher = cryptoFramework.createCipher('AES256|GCM|NoPadding');
     await cipher.init(cryptoFramework.CryptoMode.DECRYPT_MODE, key, params);
-    const output = await cipher.doFinal({ data: this.fromHex(payload.ciphertext) });
+    let output: cryptoFramework.DataBlob;
+    try {
+      output = await cipher.doFinal({ data: this.fromHex(payload.ciphertext) });
+    } catch (error) {
+      output = await this.decryptLegacyCombinedGcm(payload, groupKeyMaterial, aadText);
+    }
     return this.fromUtf8(output.data);
+  }
+
+  private normalizeGcmEncryptOutput(output: Uint8Array, authTag: Uint8Array, plainSizeBytes: number): GroupGcmCipherParts {
+    if (output.byteLength >= plainSizeBytes + 16) {
+      return {
+        ciphertext: output.slice(0, output.byteLength - 16),
+        authTag: output.slice(output.byteLength - 16)
+      };
+    }
+    if (this.isAllZero(authTag) && output.byteLength >= 16) {
+      return {
+        ciphertext: output.slice(0, output.byteLength - 16),
+        authTag: output.slice(output.byteLength - 16)
+      };
+    }
+    return {
+      ciphertext: output,
+      authTag: authTag
+    };
+  }
+
+  private async decryptLegacyCombinedGcm(
+    payload: GroupEncryptedPayload,
+    groupKeyMaterial: string,
+    aadText: string
+  ): Promise<cryptoFramework.DataBlob> {
+    const encryptedData = this.fromHex(payload.ciphertext);
+    if (encryptedData.byteLength <= 16) {
+      throw new Error('密文长度不足');
+    }
+    const ciphertext = encryptedData.slice(0, encryptedData.byteLength - 16);
+    const authTag = encryptedData.slice(encryptedData.byteLength - 16);
+    const keyData: cryptoFramework.DataBlob = { data: this.fromHex(groupKeyMaterial) };
+    const keyGenerator = cryptoFramework.createSymKeyGenerator('AES256');
+    const key = await keyGenerator.convertKey(keyData);
+    const params: cryptoFramework.GcmParamsSpec = {
+      algName: 'GcmParamsSpec',
+      iv: { data: this.fromHex(payload.iv) },
+      aad: { data: this.toUtf8(aadText) },
+      authTag: { data: this.isAllZero(this.fromHex(payload.authTag)) ? authTag : this.fromHex(payload.authTag) }
+    };
+    const cipher = cryptoFramework.createCipher('AES256|GCM|NoPadding');
+    await cipher.init(cryptoFramework.CryptoMode.DECRYPT_MODE, key, params);
+    return await cipher.doFinal({ data: ciphertext });
+  }
+
+  private isAllZero(data: Uint8Array): boolean {
+    for (let index = 0; index < data.byteLength; index += 1) {
+      if (data[index] !== 0) {
+        return false;
+      }
+    }
+    return data.byteLength > 0;
   }
 
   private toHex(data: Uint8Array): string {
@@ -223,4 +283,9 @@ export class CourseDropGroupCryptoService implements GroupCryptoService {
     }
     return output;
   }
+}
+
+interface GroupGcmCipherParts {
+  ciphertext: Uint8Array;
+  authTag: Uint8Array;
 }

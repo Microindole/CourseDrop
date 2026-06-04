@@ -25,6 +25,8 @@ export interface RelayUploadResponse {
 export interface RelayDownloadRequest {
   code: string;
   itemId: string;
+  displayName: string;
+  contentType: string;
   targetDirectory: string;
   fingerprintId?: string;
   accountId?: string;
