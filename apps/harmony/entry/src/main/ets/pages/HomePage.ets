@@ -181,6 +181,48 @@ struct HomePage {
         .alignItems(VerticalAlign.Center)
       }
 
+      CdPanel({
+        clickable: true,
+        onTap: () => {
+          router.pushUrl({ url: 'pages/GroupTestPage' });
+        }
+      }) {
+        Row({ space: AppSpacing.MD }) {
+          Stack() {
+            Image($r('app.media.cd_icon_share'))
+              .width(AppSize.ICON_MD)
+              .height(AppSize.ICON_MD)
+              .fillColor(AppColors.ACCENT)
+          }
+          .width(48)
+          .height(48)
+          .backgroundColor(AppColors.ACCENT_SOFT)
+          .borderRadius(AppRadius.LG)
+          .border({ width: 0.7, color: AppColors.ACCENT })
+
+          Column({ space: AppSpacing.XS }) {
+            Text('群组')
+              .fontSize(AppTypography.BODY)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(AppColors.TEXT)
+
+            Text('像聊天一样和好友共享加密文件流')
+              .fontSize(AppTypography.CAPTION)
+              .fontColor(AppColors.TEXT_SECONDARY)
+          }
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Start)
+
+          Image($r('app.media.cd_icon_done'))
+            .width(14)
+            .height(14)
+            .fillColor(AppColors.MUTED)
+            .rotate({ angle: 270 })
+        }
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
+      }
+
       CdBanner({
         title: '安全中转与局域网直传双引擎',
         description: '本地优先整理内容，公网只托管临时密文，局域网下优先走直连通道。',

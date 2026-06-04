@@ -4,6 +4,7 @@ import {
   GroupCreateRequest,
   GroupCreateResponse,
   GroupMember,
+  GroupMembershipResult,
   GroupMessage,
   GroupMessageSyncResult
 } from '../../models/Group';
@@ -47,6 +48,7 @@ export interface GroupFileDownloadResponse {
 export interface GroupNetworkContract {
   createGroup(request: GroupCreateRequest): Promise<GroupCreateResponse>;
   getGroup(groupId: string): Promise<GroupCreateResponse>;
+  listMyGroups(): Promise<GroupMembershipResult[]>;
   joinGroup(groupId: string, fingerprintId: string): Promise<GroupMember>;
   leaveGroup(groupId: string, fingerprintId: string): Promise<void>;
   sendMessage(groupId: string, message: GroupMessage): Promise<GroupMessage>;
@@ -61,6 +63,10 @@ export class PendingGroupNetworkContract implements GroupNetworkContract {
   }
 
   async getGroup(_groupId: string): Promise<GroupCreateResponse> {
+    throw new Error('群组服务端接口尚未接入');
+  }
+
+  async listMyGroups(): Promise<GroupMembershipResult[]> {
     throw new Error('群组服务端接口尚未接入');
   }
 
@@ -106,6 +112,18 @@ export class HttpGroupNetworkContract implements GroupNetworkContract {
   async getGroup(groupId: string): Promise<GroupCreateResponse> {
     const responseText = await this.apiClient.get(`/api/groups/${groupId}`);
     return JSON.parse(responseText) as GroupCreateResponse;
+  }
+
+  async listMyGroups(): Promise<GroupMembershipResult[]> {
+    const identity = identityService.getLocalIdentity();
+    if (identity === undefined || identity.fingerprintId.length === 0) {
+      throw new Error('请先注册本机身份');
+    }
+    const headers: FingerprintHeader = {
+      'X-CourseDrop-Fingerprint-Id': identity.fingerprintId
+    };
+    const responseText = await this.apiClient.get('/api/groups/mine', headers);
+    return JSON.parse(responseText) as GroupMembershipResult[];
   }
 
   async joinGroup(groupId: string, fingerprintId: string): Promise<GroupMember> {

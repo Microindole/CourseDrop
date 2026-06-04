@@ -5,6 +5,9 @@ import { encryptionService } from '../crypto';
 import { filePickerService, fileSystemService } from '../file';
 import { courseDropFileStore, localFileIndexRepository } from '../local';
 import {
+  PreferencesLocalGroupMemberRepository,
+  PreferencesLocalGroupMessageRepository,
+  PreferencesLocalGroupRepository,
   RuntimeLocalGroupMemberRepository,
   RuntimeLocalGroupMessageRepository,
   RuntimeLocalGroupRepository
@@ -26,6 +29,7 @@ export type {
   GroupFileUploadResponse,
   GroupNetworkContract
 } from './GroupNetworkContract';
+export type { GroupMembershipResult } from '../../models/Group';
 export { HttpGroupNetworkContract, PendingGroupNetworkContract } from './GroupNetworkContract';
 export type {
   LocalGroupMemberRepository,
@@ -33,6 +37,9 @@ export type {
   LocalGroupRepository
 } from './GroupRepositories';
 export {
+  PreferencesLocalGroupMemberRepository,
+  PreferencesLocalGroupMessageRepository,
+  PreferencesLocalGroupRepository,
   RuntimeLocalGroupMemberRepository,
   RuntimeLocalGroupMessageRepository,
   RuntimeLocalGroupRepository
@@ -58,9 +65,9 @@ export type {
 } from './GroupMessageService';
 export { DefaultGroupMessageService } from './GroupMessageService';
 
-export const localGroupRepository = new RuntimeLocalGroupRepository();
-export const localGroupMemberRepository = new RuntimeLocalGroupMemberRepository();
-export const localGroupMessageRepository = new RuntimeLocalGroupMessageRepository();
+export const localGroupRepository = new PreferencesLocalGroupRepository();
+export const localGroupMemberRepository = new PreferencesLocalGroupMemberRepository();
+export const localGroupMessageRepository = new PreferencesLocalGroupMessageRepository();
 export const groupCryptoService = new CourseDropGroupCryptoService();
 export const groupNetworkContract = new HttpGroupNetworkContract(apiClient, fileSystemService);
 export const groupService = new DefaultGroupService(

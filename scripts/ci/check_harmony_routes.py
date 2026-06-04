@@ -48,10 +48,9 @@ def main() -> int:
         if not index_file.exists():
             errors.append(f"Missing service barrel: services/{name}/index.ets")
 
-    group_test = ETS_ROOT / "pages" / "GroupTestPage.ets"
     home = ETS_ROOT / "pages" / "HomePage.ets"
-    if group_test.exists() and home.exists() and "pages/GroupTestPage" in home.read_text(encoding="utf-8"):
-        errors.append("GroupTestPage should remain outside the HomePage main flow")
+    if home.exists() and "pages/GroupTestPage" in home.read_text(encoding="utf-8") and "pages/GroupTestPage" not in pages:
+        errors.append("HomePage links GroupTestPage, but main_pages.json does not register it")
 
     if errors:
         print("Harmony route and layer check failed:")

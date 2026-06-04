@@ -103,6 +103,7 @@ export default struct SettingsPage {
     if (this.selectedSettingsSection === 6) return '诊断信息';
     if (this.selectedSettingsSection === 7) return '隐私与安全加密';
     if (this.selectedSettingsSection === 8) return '存储与缓存清理';
+    if (this.selectedSettingsSection === 9) return '群组';
     return '系统设置';
   }
 
@@ -190,6 +191,7 @@ export default struct SettingsPage {
     this.settingEntry(6, '诊断信息', '查看本地目录、索引数量和中转源数量', $r('app.media.cd_icon_server'), AppColors.TEXT_SECONDARY, AppColors.SURFACE_MUTED, 'DIAG')
     this.settingEntry(7, '隐私与安全加密', '配置端到端加密传输，降低公网中转明文风险', $r('app.media.cd_icon_lock'), AppColors.SUCCESS, AppColors.SUCCESS_SOFT, 'E2EE')
     this.settingEntry(8, '存储与缓存清理', '设置提取链接默认时效与本地缓存清理策略', $r('app.media.cd_icon_library'), AppColors.ACCENT, AppColors.ACCENT_SOFT, 'CACHE')
+    this.settingEntry(9, '群组', '像聊天一样和好友共享加密文件流', $r('app.media.cd_icon_share'), AppColors.PRIMARY, AppColors.PRIMARY_SOFT, 'GROUP')
   }
 
   // 连接策略与身份标识卡片
@@ -508,6 +510,37 @@ export default struct SettingsPage {
   }
 
   @Builder
+  groupSection() {
+    CdPanel({ hasShadow: true }) {
+      Row() {
+        Column({ space: 4 }) {
+          Text('打开群组')
+            .fontSize(AppTypography.BODY_SMALL)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(AppColors.TEXT)
+
+          Text('创建群、邀请好友、共享加密消息和文件')
+            .fontSize(11)
+            .fontColor(AppColors.TEXT_SECONDARY)
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+
+        Image($r('app.media.cd_icon_done'))
+          .width(14)
+          .height(14)
+          .fillColor(AppColors.MUTED)
+          .rotate({ angle: 270 })
+      }
+      .width('100%')
+      .padding({ top: AppSpacing.SM, bottom: AppSpacing.SM })
+      .onClick(() => {
+        router.pushUrl({ url: 'pages/GroupTestPage' });
+      })
+    }
+  }
+
+  @Builder
   settingsDetail() {
     CdTopBar({
       title: this.settingsTitle(),
@@ -534,6 +567,8 @@ export default struct SettingsPage {
       this.securitySection()
     } else if (this.selectedSettingsSection === 8) {
       this.cacheSection()
+    } else if (this.selectedSettingsSection === 9) {
+      this.groupSection()
     }
   }
 

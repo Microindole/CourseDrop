@@ -14,6 +14,7 @@ import com.coursedrop.server.common.ApiException;
 import com.coursedrop.server.config.StorageProperties;
 import com.coursedrop.server.dto.CreateGroupRequest;
 import com.coursedrop.server.dto.GroupFileResponse;
+import com.coursedrop.server.dto.GroupMembershipResponse;
 import com.coursedrop.server.dto.GroupMemberResponse;
 import com.coursedrop.server.dto.GroupMessageRequest;
 import com.coursedrop.server.dto.GroupMessageResponse;
@@ -22,10 +23,12 @@ import com.coursedrop.server.dto.GroupResponse;
 import com.coursedrop.server.enums.GroupMemberRole;
 import com.coursedrop.server.enums.GroupMemberStatus;
 import com.coursedrop.server.enums.GroupStatus;
+import com.coursedrop.server.group.GroupFileRecord;
 import com.coursedrop.server.group.GroupMemberRecord;
 import com.coursedrop.server.group.GroupMessageRecord;
+import com.coursedrop.server.group.GroupRealtimeEvent;
+import com.coursedrop.server.group.GroupRealtimeNotifier;
 import com.coursedrop.server.group.GroupRecord;
-import com.coursedrop.server.group.GroupFileRecord;
 import com.coursedrop.server.mapper.GroupFileRepository;
 import com.coursedrop.server.mapper.GroupMemberRepository;
 import com.coursedrop.server.mapper.GroupMessageRepository;
@@ -43,6 +46,7 @@ public class GroupService {
     private final IdentityRepository identityRepository;
     private final LocalFileStorageService storageService;
     private final StorageProperties storageProperties;
+    private final GroupRealtimeNotifier realtimeNotifier;
 
     public GroupService(
             GroupRepository groupRepository,
@@ -51,7 +55,8 @@ public class GroupService {
             GroupFileRepository fileRepository,
             IdentityRepository identityRepository,
             LocalFileStorageService storageService,
-            StorageProperties storageProperties) {
+            StorageProperties storageProperties,
+            GroupRealtimeNotifier realtimeNotifier) {
         this.groupRepository = groupRepository;
         this.memberRepository = memberRepository;
         this.messageRepository = messageRepository;
@@ -59,6 +64,7 @@ public class GroupService {
         this.identityRepository = identityRepository;
         this.storageService = storageService;
         this.storageProperties = storageProperties;
+        this.realtimeNotifier = realtimeNotifier;
     }
 
     public GroupResponse create(CreateGroupRequest request) {
@@ -86,6 +92,14 @@ public class GroupService {
 
     public GroupResponse get(String groupId) {
         return toResponse(requireGroup(groupId));
+    }
+
+    public List<GroupMembershipResponse> listMine(String fingerprintId) {
+        requireFingerprint(fingerprintId);
+        return memberRepository.findActiveByFingerprintId(fingerprintId)
+                .stream()
+                .map(member -> new GroupMembershipResponse(toResponse(requireGroup(member.groupId())), toResponse(member)))
+                .toList();
     }
 
     public GroupMemberResponse join(String groupId, String fingerprintId) {
@@ -123,6 +137,7 @@ public class GroupService {
                 request.encryptedPayload(),
                 Instant.now());
         messageRepository.save(message);
+        notifyMessageCreated(message);
         return toResponse(message);
     }
 
@@ -282,6 +297,18 @@ public class GroupService {
                 message.authTag(),
                 message.encryptedPayload(),
                 message.createdAt());
+    }
+
+    private void notifyMessageCreated(GroupMessageRecord message) {
+        var memberIds = memberRepository.findByGroupId(message.groupId())
+                .stream()
+                .filter(member -> member.status() == GroupMemberStatus.ACTIVE)
+                .map(GroupMemberRecord::fingerprintId)
+                .toList();
+        realtimeNotifier.notifyMembers(memberIds, new GroupRealtimeEvent(
+                "GROUP_MESSAGE_CREATED",
+                message.groupId(),
+                toResponse(message)));
     }
 
     private GroupFileResponse toResponse(GroupFileRecord file) {

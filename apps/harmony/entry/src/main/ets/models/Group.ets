@@ -11,6 +11,8 @@ export interface GroupConfig {
   allowText: boolean;
   expiryHours: number;
   maxFileSizeMb: number;
+  avatarText?: string;
+  avatarColor?: string;
 }
 
 export interface GroupSession {
@@ -108,4 +110,9 @@ export interface GroupCreateResponse {
 export interface GroupMessageSyncResult {
   messages: GroupMessage[];
   nextCursor: string;
+}
+
+export interface GroupMembershipResult {
+  group: GroupCreateResponse;
+  member: GroupMember;
 }

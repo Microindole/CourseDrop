@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coursedrop.server.dto.CreateGroupRequest;
 import com.coursedrop.server.dto.GroupMemberResponse;
+import com.coursedrop.server.dto.GroupMembershipResponse;
 import com.coursedrop.server.dto.GroupMessageRequest;
 import com.coursedrop.server.dto.GroupMessageResponse;
 import com.coursedrop.server.dto.GroupMessageSyncResponse;
@@ -24,6 +25,7 @@ import com.coursedrop.server.dto.JoinGroupRequest;
 import com.coursedrop.server.service.GroupService;
 
 import jakarta.validation.Valid;
+import java.util.List;
 
 @Validated
 @RestController
@@ -43,6 +45,12 @@ public class GroupController {
     @GetMapping("/{groupId}")
     public GroupResponse get(@PathVariable String groupId) {
         return groupService.get(groupId);
+    }
+
+    @GetMapping("/mine")
+    public List<GroupMembershipResponse> mine(
+            @RequestHeader(name = "X-CourseDrop-Fingerprint-Id") String fingerprintId) {
+        return groupService.listMine(fingerprintId);
     }
 
     @PostMapping("/{groupId}/join")
