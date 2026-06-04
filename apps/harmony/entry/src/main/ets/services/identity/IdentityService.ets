@@ -34,7 +34,8 @@ export class IdentityService {
       fingerprint: response.fingerprint,
       fingerprintId: response.id,
       deviceName: response.deviceName,
-      accountId: response.accountId === null ? '' : response.accountId
+      accountId: response.accountId === null ? '' : response.accountId,
+      accountUsername: existing === undefined ? undefined : existing.accountUsername
     };
     this.repository.save(identity);
     return identity;
@@ -68,7 +69,8 @@ export class IdentityService {
       fingerprint: identity.fingerprint,
       fingerprintId: identity.fingerprintId,
       deviceName: identity.deviceName,
-      accountId: response.id
+      accountId: response.id,
+      accountUsername: response.username
     });
     return response;
   }
@@ -89,7 +91,8 @@ export class IdentityService {
       fingerprint: identity.fingerprint,
       fingerprintId: identity.fingerprintId,
       deviceName: identity.deviceName,
-      accountId: response.id
+      accountId: response.id,
+      accountUsername: response.username
     });
     return response;
   }

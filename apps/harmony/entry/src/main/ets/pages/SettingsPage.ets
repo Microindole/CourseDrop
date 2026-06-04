@@ -41,6 +41,7 @@ export default struct SettingsPage {
     this.expireOption = this.viewModel.defaultExpireHours;
     this.cachePolicy = this.viewModel.cachePolicy;
     this.accountPasswordLoginEnabled = this.viewModel.passwordLoginEnabled;
+    this.accountUsername = this.viewModel.accountUsername;
     this.actionText = this.viewModel.lastActionText.length > 0 ? this.viewModel.lastActionText : '配置信息已同步';
     if (showToast && this.actionText.length > 0) {
       this.showActionToast(this.actionText);
@@ -119,6 +120,157 @@ export default struct SettingsPage {
     });
   }
 
+  private accountDisplayName(): string {
+    if (this.viewModel.localIdentity !== undefined &&
+      this.viewModel.localIdentity.accountUsername !== undefined &&
+      this.viewModel.localIdentity.accountUsername.length > 0) {
+      return this.viewModel.localIdentity.accountUsername;
+    }
+    if (this.accountUsername.trim().length > 0) {
+      return this.accountUsername.trim();
+    }
+    return '未绑定账号';
+  }
+
+  private accountSubtitle(): string {
+    if (this.viewModel.localIdentity !== undefined && this.viewModel.localIdentity.accountId.length > 0) {
+      return `账号 ID ${this.viewModel.localIdentity.accountId}`;
+    }
+    if (this.viewModel.localIdentity !== undefined && this.viewModel.localIdentity.fingerprintId.length > 0) {
+      return `本机指纹 ${this.viewModel.localIdentity.fingerprintId}`;
+    }
+    return '创建或登录账号后会在这里显示';
+  }
+
+  @Builder
+  profileCard() {
+    CdPanel({ hasShadow: false }) {
+      Row({ space: AppSpacing.MD }) {
+        Stack() {
+          Circle()
+            .width(54)
+            .height(54)
+            .fill('#E8F1FF')
+
+          Circle()
+            .width(50)
+            .height(50)
+            .fill('#F8FBFF')
+            .position({ x: 2, y: 2 })
+
+          Circle()
+            .width(23)
+            .height(23)
+            .fill('#1466FF')
+            .opacity(0.92)
+            .position({ x: 16, y: 8 })
+
+          Row()
+            .width(40)
+            .height(21)
+            .borderRadius(12)
+            .backgroundColor('#1466FF')
+            .opacity(0.82)
+            .position({ x: 7, y: 32 })
+
+          Row()
+            .width(16)
+            .height(4)
+            .borderRadius(2)
+            .backgroundColor('#FFFFFF')
+            .opacity(0.85)
+            .position({ x: 27, y: 38 })
+        }
+        .width(58)
+        .height(58)
+
+        Column({ space: AppSpacing.XS }) {
+          Text(this.accountDisplayName())
+            .fontSize(AppTypography.SUBTITLE)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(AppColors.TEXT)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+          Text(this.accountSubtitle())
+            .fontSize(AppTypography.CAPTION)
+            .fontColor(AppColors.TEXT_SECONDARY)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+
+        Image($r('app.media.cd_icon_done'))
+          .width(14)
+          .height(14)
+          .fillColor(AppColors.MUTED)
+          .rotate({ angle: 270 })
+      }
+      .width('100%')
+      .alignItems(VerticalAlign.Center)
+      .onClick(() => {
+        this.switchSettingsSection(3);
+      })
+    }
+  }
+
+  @Builder
+  settingRow(index: number, title: string, description: string, icon: Resource, mainColor: string, bgColor: string, showDivider: boolean = true) {
+    Column() {
+      Row({ space: AppSpacing.MD }) {
+        Stack() {
+          Image(icon)
+            .width(20)
+            .height(20)
+            .fillColor(mainColor)
+        }
+        .width(42)
+        .height(42)
+        .backgroundColor(bgColor)
+        .borderRadius(21)
+
+        Column({ space: 3 }) {
+          Text(title)
+            .fontSize(AppTypography.BODY_SMALL)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(AppColors.TEXT)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+          Text(description)
+            .fontSize(AppTypography.CAPTION)
+            .fontColor(AppColors.TEXT_SECONDARY)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+
+        Image($r('app.media.cd_icon_done'))
+          .width(13)
+          .height(13)
+          .fillColor(AppColors.MUTED)
+          .opacity(0.65)
+          .rotate({ angle: 270 })
+      }
+      .width('100%')
+      .height(68)
+      .alignItems(VerticalAlign.Center)
+      .onClick(() => {
+        this.switchSettingsSection(index);
+      })
+
+      if (showDivider) {
+        Divider()
+          .color('#1A132235')
+          .strokeWidth(0.5)
+          .margin({ left: 54 })
+      }
+    }
+    .width('100%')
+  }
+
   @Builder
   settingEntry(index: number, title: string, description: string, icon: Resource, mainColor: string, bgColor: string, tag: string) {
     CdPanel({ hasShadow: true }) {
@@ -179,29 +331,46 @@ export default struct SettingsPage {
 
   @Builder
   settingsOverview() {
-    Column({ space: AppSpacing.XS }) {
-      Text('系统设置')
-        .fontSize(AppTypography.DISPLAY)
+    Column({ space: AppSpacing.SM }) {
+      Text('设置')
+        .fontSize(30)
         .fontWeight(FontWeight.Bold)
         .fontColor(AppColors.TEXT)
+        .width('100%')
+        .textAlign(TextAlign.Start)
 
-      Text('管理本地加密方式、缓存清理及多端配对')
-        .fontSize(AppTypography.BODY_SMALL)
-        .fontColor(AppColors.TEXT_SECONDARY)
+      this.profileCard()
+
+      CdPanel({ hasShadow: false }) {
+        Column() {
+          this.settingRow(1, '设备身份与连接', '查看设备指纹，配置局域网优先直传策略', $r('app.media.cd_icon_devices'), AppColors.PRIMARY, AppColors.PRIMARY_SOFT)
+          this.settingRow(3, '账号安全', '创建账号、登录已有账号，并控制密码登录能力', $r('app.media.cd_icon_lock'), AppColors.WARNING, AppColors.WARNING_SOFT)
+          this.settingRow(7, '隐私与安全加密', '配置端到端加密传输，降低公网中转明文风险', $r('app.media.cd_icon_lock'), AppColors.SUCCESS, AppColors.SUCCESS_SOFT, false)
+        }
+        .width('100%')
+      }
+
+      CdPanel({ hasShadow: false }) {
+        Column() {
+          this.settingRow(9, '设备扫描', '扫描局域网节点，手动添加电脑或确认可信设备', $r('app.media.cd_icon_devices'), AppColors.PRIMARY_SELECTED, AppColors.PRIMARY_SOFT)
+          this.settingRow(2, '电脑浏览器扫码配对', '输入网页端六位登录码，授权电脑浏览器登录', $r('app.media.cd_icon_link'), AppColors.ACCENT, AppColors.ACCENT_SOFT)
+          this.settingRow(4, '扫码与解析', '打开系统相机或粘贴协议文本进行调试解析', $r('app.media.cd_icon_search'), AppColors.SUCCESS, AppColors.SUCCESS_SOFT, false)
+        }
+        .width('100%')
+      }
+
+      CdPanel({ hasShadow: false }) {
+        Column() {
+          this.settingRow(5, '公网中转源配置', '新增、编辑、删除或停用自定义中转服务器', $r('app.media.cd_icon_relay'), AppColors.PRIMARY_SELECTED, AppColors.PRIMARY_SOFT)
+          this.settingRow(6, '诊断信息', '查看本地目录、索引数量和中转源数量', $r('app.media.cd_icon_server'), AppColors.TEXT_SECONDARY, AppColors.SURFACE_MUTED)
+          this.settingRow(8, '存储与缓存清理', '设置提取链接默认时效与本地缓存清理策略', $r('app.media.cd_icon_library'), AppColors.ACCENT, AppColors.ACCENT_SOFT, false)
+        }
+        .width('100%')
+      }
     }
     .width('100%')
-    .alignItems(HorizontalAlign.Center)
-    .padding({ top: AppSpacing.XL, bottom: AppSpacing.LG })
-
-    this.settingEntry(1, '设备身份与连接', '查看设备指纹，配置局域网优先直传策略', $r('app.media.cd_icon_devices'), AppColors.PRIMARY, AppColors.PRIMARY_SOFT, 'IDENTITY')
-    this.settingEntry(9, '设备扫描', '扫描局域网节点，手动添加电脑或确认可信设备', $r('app.media.cd_icon_devices'), AppColors.PRIMARY_SELECTED, AppColors.PRIMARY_SOFT, 'DEVICE')
-    this.settingEntry(2, '电脑浏览器扫码配对', '输入网页端六位登录码，授权电脑浏览器登录', $r('app.media.cd_icon_link'), AppColors.ACCENT, AppColors.ACCENT_SOFT, 'PAIR')
-    this.settingEntry(3, '账号安全', '创建账号、登录已有账号，并控制密码登录能力', $r('app.media.cd_icon_lock'), AppColors.WARNING, AppColors.WARNING_SOFT, 'ACCOUNT')
-    this.settingEntry(4, '扫码与解析', '打开系统相机或粘贴协议文本进行调试解析', $r('app.media.cd_icon_search'), AppColors.SUCCESS, AppColors.SUCCESS_SOFT, 'SCAN')
-    this.settingEntry(5, '公网中转源配置', '新增、编辑、删除或停用自定义中转服务器', $r('app.media.cd_icon_relay'), AppColors.PRIMARY_SELECTED, AppColors.PRIMARY_SOFT, 'RELAY')
-    this.settingEntry(6, '诊断信息', '查看本地目录、索引数量和中转源数量', $r('app.media.cd_icon_server'), AppColors.TEXT_SECONDARY, AppColors.SURFACE_MUTED, 'DIAG')
-    this.settingEntry(7, '隐私与安全加密', '配置端到端加密传输，降低公网中转明文风险', $r('app.media.cd_icon_lock'), AppColors.SUCCESS, AppColors.SUCCESS_SOFT, 'E2EE')
-    this.settingEntry(8, '存储与缓存清理', '设置提取链接默认时效与本地缓存清理策略', $r('app.media.cd_icon_library'), AppColors.ACCENT, AppColors.ACCENT_SOFT, 'CACHE')
+    .alignItems(HorizontalAlign.Start)
+    .padding({ top: AppSpacing.LG, bottom: AppSpacing.LG })
   }
 
   // 连接策略与身份标识卡片
@@ -286,6 +455,7 @@ export default struct SettingsPage {
         CdTextField({
           label: '密码',
           placeholder: '开启账号密码登录时使用',
+          obscure: true,
           value: $accountPassword
         })
 

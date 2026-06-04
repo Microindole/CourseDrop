@@ -1,7 +1,6 @@
 import router from '@ohos.router';
 import { AppColors, AppSpacing, AppTypography } from '../common/Theme';
 import {
-  CdBanner,
   CdButton,
   CdSearchField,
   CdSegmentedControl,
@@ -182,12 +181,6 @@ export default struct LocalLibraryPage {
               });
             }
           }
-        })
-
-        CdBanner({
-          title: this.bannerText,
-          description: '本地文件由应用专属目录管理，只有生成分享或直连传输时才进入发送流程。',
-          tone: this.isBannerError ? 'danger' : 'info'
         })
 
         CdLocalLibraryActions({

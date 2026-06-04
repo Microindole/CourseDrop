@@ -13,6 +13,7 @@ export interface LocalIdentity {
   fingerprintId: string;
   deviceName: string;
   accountId: string;
+  accountUsername?: string;
 }
 
 export interface AccountResponse {

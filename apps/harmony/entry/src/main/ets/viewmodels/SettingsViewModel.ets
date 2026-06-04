@@ -23,7 +23,7 @@ export class SettingsViewModel {
   localIdentity: LocalIdentity | undefined = identityService.getLocalIdentity();
   lastScannedShareCode: string = '';
   lastScannedShareText: string = '';
-  accountUsername: string = '';
+  accountUsername: string = this.localIdentity === undefined || this.localIdentity.accountUsername === undefined ? '' : this.localIdentity.accountUsername;
   passwordLoginEnabled: boolean = false;
 
   reloadRelayServers(): RelayServerConfig[] {

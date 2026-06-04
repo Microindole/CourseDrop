@@ -1,7 +1,6 @@
 import router from '@ohos.router';
 import { AppColors, AppSpacing, AppTypography } from '../common/Theme';
 import {
-  CdBanner,
   CdButton,
   CdScrollContainer,
   CdSectionHeader,
@@ -116,12 +115,6 @@ export default struct SharePage {
               this.refreshing = false;
             }, 300);
           }
-        })
-
-        CdBanner({
-          title: this.lastActionText,
-          description: this.errorMessage.length > 0 ? this.errorMessage : '中转源仅按时效托管临时内容；启用加密时服务器不持有明文密钥。',
-          tone: this.errorMessage.length > 0 ? 'danger' : 'info'
         })
 
         CdPanel({ hasShadow: true }) {

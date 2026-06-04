@@ -68,11 +68,13 @@ export default struct DevicePage {
           }
         })
 
-        CdBanner({
-          title: this.lastActionText,
-          description: this.errorMessage.length > 0 ? this.errorMessage : '模拟器环境下建议先手动输入电脑 IP 和端口，例如 http://192.168.1.10:9090。',
-          tone: this.errorMessage.length > 0 ? 'danger' : 'info'
-        })
+        if (this.errorMessage.length > 0) {
+          CdBanner({
+            title: this.errorMessage,
+            description: '请检查局域网地址、端口或设备配对状态。',
+            tone: 'danger'
+          })
+        }
 
         CdPanel({ hasShadow: true }) {
           Column({ space: AppSpacing.MD }) {

@@ -4,7 +4,6 @@ import SettingsPage from './SettingsPage';
 import SharePage from './SharePage';
 import { AppColors, AppRadius, AppSize, AppSpacing, AppTypography } from '../common/Theme';
 import {
-  CdBanner,
   CdBottomTabs,
   CdPageTitle,
   CdPanel,
@@ -186,16 +185,6 @@ struct HomePage {
         .width('100%')
         .alignItems(VerticalAlign.Center)
       }
-
-      CdBanner({
-        title: '安全中转与局域网直传双引擎',
-        description: '本地优先整理内容，公网只托管临时密文，局域网下优先走直连通道。',
-        tone: 'info',
-        actionText: '同步状态',
-        onAction: () => {
-          this.syncHomeData();
-        }
-      })
 
       // 上手指南步骤卡片
       CdHomeGuideStep({

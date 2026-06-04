@@ -60,7 +60,8 @@ export class PreferencesIdentityRepository implements IdentityRepository {
       fingerprint: identity.fingerprint,
       fingerprintId: identity.fingerprintId,
       deviceName: identity.deviceName,
-      accountId: identity.accountId
+      accountId: identity.accountId,
+      accountUsername: identity.accountUsername
     };
   }
 }

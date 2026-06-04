@@ -4,6 +4,7 @@ import { AppColors, AppRadius, AppSize, AppSpacing, AppTypography } from '../../
 export struct CdTextField {
   label: string = '';
   placeholder: string = '';
+  obscure: boolean = false;
   @Link value: string;
 
   build() {
@@ -18,6 +19,7 @@ export struct CdTextField {
       TextInput({ placeholder: this.placeholder, text: this.value })
         .width('100%')
         .height(AppSize.INPUT_HEIGHT)
+        .type(this.obscure ? InputType.Password : InputType.Normal)
         .fontSize(AppTypography.BODY_SMALL)
         .fontColor(AppColors.TEXT)
         .placeholderColor(AppColors.MUTED)

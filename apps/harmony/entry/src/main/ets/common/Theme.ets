@@ -1,6 +1,7 @@
 export class AppColors {
   static readonly BACKGROUND: string = '#EEF3FA';
   static readonly BACKGROUND_DEEP: string = '#E7EEF8';
+  static readonly SETTINGS_BG: string = '#F4F6FA';
   static readonly SURFACE: string = '#FFFFFF';
   static readonly SURFACE_MUTED: string = '#EAF1FA';
   static readonly SURFACE_RAISED: string = '#F8FBFF';
