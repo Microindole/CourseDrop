@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coursedrop.server.dto.CreateGroupRequest;
 import com.coursedrop.server.dto.GroupMemberResponse;
 import com.coursedrop.server.dto.GroupMembershipResponse;
+import com.coursedrop.server.dto.GroupKeyBackupRequest;
+import com.coursedrop.server.dto.GroupKeyBackupResponse;
 import com.coursedrop.server.dto.GroupMessageRequest;
 import com.coursedrop.server.dto.GroupMessageResponse;
 import com.coursedrop.server.dto.GroupMessageSyncResponse;
@@ -66,6 +69,13 @@ public class GroupController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{groupId}/members")
+    public List<GroupMemberResponse> members(
+            @PathVariable String groupId,
+            @RequestHeader(name = "X-CourseDrop-Fingerprint-Id") String fingerprintId) {
+        return groupService.listMembers(groupId, fingerprintId);
+    }
+
     @PostMapping("/{groupId}/messages")
     public GroupMessageResponse sendMessage(
             @PathVariable String groupId,
@@ -114,5 +124,19 @@ public class GroupController {
             @PathVariable String fileId,
             @RequestHeader(name = "X-CourseDrop-Fingerprint-Id") String fingerprintId) {
         return ShareController.downloadResponse(groupService.downloadFile(groupId, fileId, fingerprintId));
+    }
+
+    @PutMapping("/{groupId}/key-backups/me")
+    public GroupKeyBackupResponse upsertKeyBackup(
+            @PathVariable String groupId,
+            @RequestHeader(name = "X-CourseDrop-Fingerprint-Id") String fingerprintId,
+            @Valid @RequestBody GroupKeyBackupRequest request) {
+        return groupService.upsertKeyBackup(groupId, fingerprintId, request);
+    }
+
+    @GetMapping("/key-backups/mine")
+    public List<GroupKeyBackupResponse> myKeyBackups(
+            @RequestHeader(name = "X-CourseDrop-Fingerprint-Id") String fingerprintId) {
+        return groupService.listMyKeyBackups(fingerprintId);
     }
 }

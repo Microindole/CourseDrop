@@ -1,6 +1,8 @@
 import { AppConfig } from '../common/AppConfig';
 import {
   GroupInvitePayload,
+  GroupKeyBackupResponse,
+  GroupMember,
   GroupMessage,
   GroupSession,
   PlainFilePayload,
@@ -8,7 +10,7 @@ import {
 } from '../models/Group';
 import { apiClient } from '../services/ApiClient';
 import { clipboardService } from '../services/clipboard';
-import { groupCryptoService, groupFileWorkflow, groupMessageService, groupService } from '../services/group';
+import { groupCryptoService, groupFileWorkflow, groupKeyBackupService, groupMessageService, groupService } from '../services/group';
 import { identityService, LocalIdentity } from '../services/identity';
 import { relaySourceService } from '../services/relay';
 
@@ -30,6 +32,7 @@ export class GroupTestViewModel {
   currentIdentity?: LocalIdentity;
   currentGroup?: GroupSession;
   groups: GroupSession[] = [];
+  members: GroupMember[] = [];
   messages: GroupMessage[] = [];
 
   initializeFromLocalState(): void {
@@ -60,6 +63,7 @@ export class GroupTestViewModel {
       throw new Error('群组不存在');
     }
     this.currentGroup = group;
+    this.members = groupService.listMembers(group.id);
     this.messages = groupMessageService.listLocalMessages(group.id);
     this.inviteText = this.buildInviteText(group);
   }
@@ -77,6 +81,7 @@ export class GroupTestViewModel {
       }
     });
     this.groups = groupService.listLocalGroups();
+    this.members = groupService.listMembers(this.currentGroup.id);
     this.messages = [];
     this.inviteText = this.buildInviteText(this.currentGroup);
     this.lastActionText = `已创建群组：${this.currentGroup.plainName}`;
@@ -93,6 +98,7 @@ export class GroupTestViewModel {
       invite: invite
     });
     this.groups = groupService.listLocalGroups();
+    this.members = groupService.listMembers(this.currentGroup.id);
     this.messages = groupMessageService.listLocalMessages(this.currentGroup.id);
     this.inviteText = this.buildInviteText(this.currentGroup);
     this.lastActionText = `已加入群组：${this.currentGroup.plainName}`;
@@ -131,6 +137,89 @@ export class GroupTestViewModel {
     await groupMessageService.syncGroupMessages(group.id);
     this.messages = groupMessageService.listLocalMessages(group.id);
     this.lastActionText = `已同步 ${this.messages.length} 条消息`;
+    this.errorMessage = '';
+  }
+
+  async syncMembers(): Promise<void> {
+    const group = this.ensureGroup();
+    this.members = await groupService.syncMembers(group.id);
+    this.lastActionText = `已同步 ${this.activeMemberCount()} 位成员`;
+    this.errorMessage = '';
+  }
+
+  updateGroupProfile(avatarText: string, avatarColor: string): void {
+    const group = this.ensureGroup();
+    this.currentGroup = groupService.updateLocalProfile(group.id, avatarText.trim(), avatarColor.trim());
+    this.groups = groupService.listLocalGroups();
+    this.lastActionText = '群资料已更新';
+    this.errorMessage = '';
+  }
+
+  async backupCurrentGroup(passphrase: string): Promise<void> {
+    const group = this.ensureGroup();
+    await groupKeyBackupService.backupGroupKey({
+      group: group,
+      passphrase: passphrase
+    });
+    this.lastActionText = '群组恢复口令已加密备份';
+    this.errorMessage = '';
+  }
+
+  async restoreFirstGroupBackup(passphrase: string): Promise<void> {
+    const backups = await groupKeyBackupService.listRemoteBackups();
+    if (backups.length === 0) {
+      throw new Error('当前账号没有可恢复的群组备份');
+    }
+    let lastError = '';
+    for (let index = 0; index < backups.length; index += 1) {
+      const backup: GroupKeyBackupResponse = backups[index];
+      try {
+        this.currentGroup = await groupKeyBackupService.restoreRemoteBackup({
+          backup: backup,
+          passphrase: passphrase
+        });
+        this.groups = groupService.listLocalGroups();
+        this.members = groupService.listMembers(this.currentGroup.id);
+        this.messages = groupMessageService.listLocalMessages(this.currentGroup.id);
+        this.inviteText = this.buildInviteText(this.currentGroup);
+        await groupMessageService.syncGroupMessages(this.currentGroup.id);
+        this.messages = groupMessageService.listLocalMessages(this.currentGroup.id);
+        this.lastActionText = `已恢复群组：${this.currentGroup.plainName}`;
+        this.errorMessage = '';
+        return;
+      } catch (error) {
+        lastError = String(error);
+      }
+    }
+    throw new Error(lastError.length === 0 ? '恢复失败，请确认口令' : `恢复失败：${lastError}`);
+  }
+
+  async leaveCurrentGroup(): Promise<void> {
+    const group = this.ensureGroup();
+    await groupService.leaveGroup(group.id);
+    this.groups = groupService.listLocalGroups();
+    this.currentGroup = undefined;
+    this.members = [];
+    this.messages = [];
+    if (this.groups.length > 0) {
+      this.selectGroup(this.groups[0].id);
+    }
+    this.lastActionText = '已退出群组';
+    this.errorMessage = '';
+  }
+
+  async handleRealtimeMessage(groupId: string): Promise<void> {
+    const group = groupService.listLocalGroups().find((next: GroupSession) => next.id === groupId);
+    if (group === undefined) {
+      return;
+    }
+    await groupMessageService.syncGroupMessages(groupId);
+    this.groups = groupService.listLocalGroups();
+    if (this.currentGroup !== undefined && this.currentGroup.id === groupId) {
+      this.currentGroup = this.groups.find((next: GroupSession) => next.id === groupId);
+      this.messages = groupMessageService.listLocalMessages(groupId);
+      this.members = groupService.listMembers(groupId);
+    }
     this.errorMessage = '';
   }
 
@@ -243,6 +332,10 @@ export class GroupTestViewModel {
     const serverUrl = apiClient.getBaseUrl();
     const query = `server=${encodeURIComponent(serverUrl)}&id=${encodeURIComponent(group.id)}&key=${encodeURIComponent(group.groupKeyMaterial)}`;
     return `coursedrop://group?${query}`;
+  }
+
+  private activeMemberCount(): number {
+    return this.members.filter((member: GroupMember) => member.status === 'ACTIVE').length;
   }
 
   private formatSize(sizeBytes: number): string {

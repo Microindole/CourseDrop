@@ -17,6 +17,17 @@ export interface GroupMetadataEncryptionResult {
   nameAuthTag: string;
 }
 
+export interface PlainGroupKeyBackupPayload {
+  groupId: string;
+  groupKeyMaterial: string;
+  plainName: string;
+  encryptedName: string;
+  nameIv: string;
+  nameAuthTag: string;
+  configJson: string;
+  backedUpAt: string;
+}
+
 export interface GroupCryptoService {
   generateGroupKey(): Promise<string>;
   encryptGroupMetadata(plainName: string, groupKeyMaterial: string): Promise<GroupMetadataEncryptionResult>;
@@ -27,6 +38,8 @@ export interface GroupCryptoService {
   decryptTextPayload(payload: GroupEncryptedPayload, groupKeyMaterial: string): Promise<PlainTextPayload>;
   encryptControlPayload(payload: PlainControlPayload, groupKeyMaterial: string): Promise<GroupEncryptedPayload>;
   decryptControlPayload(payload: GroupEncryptedPayload, groupKeyMaterial: string): Promise<PlainControlPayload>;
+  encryptKeyBackupPayload(payload: PlainGroupKeyBackupPayload, backupKeyMaterial: string): Promise<GroupEncryptedPayload>;
+  decryptKeyBackupPayload(payload: GroupEncryptedPayload, backupKeyMaterial: string): Promise<PlainGroupKeyBackupPayload>;
 }
 
 export class PendingGroupCryptoService implements GroupCryptoService {
@@ -63,6 +76,14 @@ export class PendingGroupCryptoService implements GroupCryptoService {
   }
 
   async decryptControlPayload(_payload: GroupEncryptedPayload, _groupKeyMaterial: string): Promise<PlainControlPayload> {
+    throw new Error('群组加密服务尚未接入');
+  }
+
+  async encryptKeyBackupPayload(_payload: PlainGroupKeyBackupPayload, _backupKeyMaterial: string): Promise<GroupEncryptedPayload> {
+    throw new Error('群组加密服务尚未接入');
+  }
+
+  async decryptKeyBackupPayload(_payload: GroupEncryptedPayload, _backupKeyMaterial: string): Promise<PlainGroupKeyBackupPayload> {
     throw new Error('群组加密服务尚未接入');
   }
 
@@ -121,6 +142,14 @@ export class CourseDropGroupCryptoService implements GroupCryptoService {
 
   async decryptControlPayload(payload: GroupEncryptedPayload, groupKeyMaterial: string): Promise<PlainControlPayload> {
     return JSON.parse(await this.decryptText(payload, groupKeyMaterial, 'coursedrop:group:payload:v1')) as PlainControlPayload;
+  }
+
+  async encryptKeyBackupPayload(payload: PlainGroupKeyBackupPayload, backupKeyMaterial: string): Promise<GroupEncryptedPayload> {
+    return await this.encryptJson(payload, backupKeyMaterial, 'coursedrop:group:key-backup:v1');
+  }
+
+  async decryptKeyBackupPayload(payload: GroupEncryptedPayload, backupKeyMaterial: string): Promise<PlainGroupKeyBackupPayload> {
+    return JSON.parse(await this.decryptText(payload, backupKeyMaterial, 'coursedrop:group:key-backup:v1')) as PlainGroupKeyBackupPayload;
   }
 
   private async encryptJson(payload: Object, groupKeyMaterial: string, aadText: string): Promise<GroupEncryptedPayload> {

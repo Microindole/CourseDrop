@@ -15,12 +15,15 @@ export struct CdGroupListView {
   errorMessage: string = '';
   @Link groupName: string;
   @Link inviteText: string;
+  @Link recoveryPassphrase: string;
   @Link showCreatePanel: boolean;
   @Link showJoinPanel: boolean;
+  @Link showRestorePanel: boolean;
   onBack: () => void = () => {};
   onSelectGroup: (groupId: string) => void = (_groupId: string) => {};
   onCreateGroup: () => void = () => {};
   onJoinGroup: () => void = () => {};
+  onRestoreBackup: () => void = () => {};
 
   private groupInitial(group: GroupSession): string {
     if (group.config.avatarText !== undefined && group.config.avatarText.length > 0) {
@@ -159,6 +162,7 @@ export struct CdGroupListView {
           onTap: () => {
             this.showCreatePanel = !this.showCreatePanel;
             this.showJoinPanel = false;
+            this.showRestorePanel = false;
           }
         })
 
@@ -175,10 +179,28 @@ export struct CdGroupListView {
           onTap: () => {
             this.showJoinPanel = !this.showJoinPanel;
             this.showCreatePanel = false;
+            this.showRestorePanel = false;
           }
         })
 
         Text('加入')
+          .fontSize(AppTypography.CAPTION)
+          .fontColor(AppColors.TEXT_SECONDARY)
+      }
+      .alignItems(HorizontalAlign.Center)
+
+      Column({ space: AppSpacing.XS }) {
+        CdIconButton({
+          icon: $r('app.media.cd_icon_lock'),
+          variant: 'tonal',
+          onTap: () => {
+            this.showRestorePanel = !this.showRestorePanel;
+            this.showCreatePanel = false;
+            this.showJoinPanel = false;
+          }
+        })
+
+        Text('恢复')
           .fontSize(AppTypography.CAPTION)
           .fontColor(AppColors.TEXT_SECONDARY)
       }
@@ -238,6 +260,32 @@ export struct CdGroupListView {
     }
   }
 
+  @Builder
+  restorePanel() {
+    if (this.showRestorePanel) {
+      CdPanel() {
+        Column({ space: AppSpacing.MD }) {
+          CdTextField({
+            label: '恢复口令',
+            placeholder: '输入备份时设置的口令',
+            obscure: true,
+            value: $recoveryPassphrase
+          })
+
+          CdButton({
+            label: '恢复群组',
+            variant: 'contained',
+            interactive: !this.busy,
+            onTap: () => {
+              this.onRestoreBackup();
+            }
+          })
+        }
+        .width('100%')
+      }
+    }
+  }
+
   build() {
     Column({ space: AppSpacing.MD }) {
       this.header()
@@ -286,6 +334,7 @@ export struct CdGroupListView {
         this.listActions()
         this.createPanel()
         this.joinPanel()
+        this.restorePanel()
       }
       .width('100%')
       .padding({ left: AppSpacing.MD, right: AppSpacing.MD, top: AppSpacing.MD, bottom: AppSpacing.MD })

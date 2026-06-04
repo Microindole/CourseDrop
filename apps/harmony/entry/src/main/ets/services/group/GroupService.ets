@@ -26,6 +26,8 @@ export interface GroupService {
   createGroup(command: CreateGroupCommand): Promise<GroupSession>;
   joinGroup(command: JoinGroupCommand): Promise<GroupSession>;
   leaveGroup(groupId: string): Promise<void>;
+  syncMembers(groupId: string): Promise<GroupMember[]>;
+  updateLocalProfile(groupId: string, avatarText: string, avatarColor: string): GroupSession;
   listLocalGroups(): GroupSession[];
   listMembers(groupId: string): GroupMember[];
 }
@@ -126,6 +128,43 @@ export class DefaultGroupService implements GroupService {
     this.messageRepository.removeByGroup(groupId);
   }
 
+  async syncMembers(groupId: string): Promise<GroupMember[]> {
+    const members = await this.networkContract.listMembers(groupId);
+    members.forEach((member: GroupMember) => {
+      this.memberRepository.save(member);
+    });
+    return this.memberRepository.listByGroup(groupId);
+  }
+
+  updateLocalProfile(groupId: string, avatarText: string, avatarColor: string): GroupSession {
+    const group = this.groupRepository.findById(groupId);
+    if (group === undefined) {
+      throw new Error('群组不存在');
+    }
+    const updated: GroupSession = {
+      id: group.id,
+      encryptedName: group.encryptedName,
+      nameIv: group.nameIv,
+      nameAuthTag: group.nameAuthTag,
+      plainName: group.plainName,
+      creatorId: group.creatorId,
+      joinedAt: group.joinedAt,
+      status: group.status,
+      groupKeyMaterial: group.groupKeyMaterial,
+      config: {
+        allowText: group.config.allowText,
+        expiryHours: group.config.expiryHours,
+        maxFileSizeMb: group.config.maxFileSizeMb,
+        avatarText: avatarText.length === 0 ? this.defaultAvatarText(group.plainName) : avatarText.substring(0, 2),
+        avatarColor: avatarColor.length === 0 ? '#1466FF' : avatarColor
+      },
+      lastMessageAt: group.lastMessageAt,
+      syncCursor: group.syncCursor
+    };
+    this.groupRepository.save(updated);
+    return updated;
+  }
+
   listLocalGroups(): GroupSession[] {
     return this.groupRepository.list();
   }
@@ -150,5 +189,10 @@ export class DefaultGroupService implements GroupService {
       avatarText: '群',
       avatarColor: '#1466FF'
     };
+  }
+
+  private defaultAvatarText(groupName: string): string {
+    const normalized = groupName.trim();
+    return normalized.length === 0 ? '群' : normalized.substring(0, 1);
   }
 }

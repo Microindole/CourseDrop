@@ -13,13 +13,16 @@ import {
   RuntimeLocalGroupRepository
 } from './GroupRepositories';
 import { DefaultGroupFileWorkflow } from './GroupFileWorkflow';
+import { DefaultGroupKeyBackupService } from './GroupKeyBackupService';
 import { DefaultGroupMessageService } from './GroupMessageService';
+import { DefaultGroupRealtimeService } from './GroupRealtimeService';
 import { DefaultGroupService } from './GroupService';
 
 export type {
   GroupCryptoService,
   GroupEncryptedPayload,
-  GroupMetadataEncryptionResult
+  GroupMetadataEncryptionResult,
+  PlainGroupKeyBackupPayload
 } from './GroupCryptoService';
 export { CourseDropGroupCryptoService, PendingGroupCryptoService } from './GroupCryptoService';
 export type {
@@ -57,6 +60,12 @@ export type {
 } from './GroupFileWorkflow';
 export { DefaultGroupFileWorkflow } from './GroupFileWorkflow';
 export type {
+  BackupGroupKeyCommand,
+  GroupKeyBackupService,
+  RestoreGroupKeyBackupCommand
+} from './GroupKeyBackupService';
+export { DefaultGroupKeyBackupService } from './GroupKeyBackupService';
+export type {
   GroupMessageService,
   ReceiveGroupFileResult,
   ReceiveGroupFileCommand,
@@ -64,12 +73,26 @@ export type {
   SendGroupTextMessageCommand
 } from './GroupMessageService';
 export { DefaultGroupMessageService } from './GroupMessageService';
+export type {
+  GroupRealtimeEvent,
+  GroupRealtimeListener,
+  GroupRealtimeMessage,
+  GroupRealtimeService
+} from './GroupRealtimeService';
+export { DefaultGroupRealtimeService } from './GroupRealtimeService';
 
 export const localGroupRepository = new PreferencesLocalGroupRepository();
 export const localGroupMemberRepository = new PreferencesLocalGroupMemberRepository();
 export const localGroupMessageRepository = new PreferencesLocalGroupMessageRepository();
 export const groupCryptoService = new CourseDropGroupCryptoService();
 export const groupNetworkContract = new HttpGroupNetworkContract(apiClient, fileSystemService);
+export const groupRealtimeService = new DefaultGroupRealtimeService(apiClient);
+export const groupKeyBackupService = new DefaultGroupKeyBackupService(
+  localGroupRepository,
+  localGroupMemberRepository,
+  groupCryptoService,
+  groupNetworkContract
+);
 export const groupService = new DefaultGroupService(
   localGroupRepository,
   localGroupMemberRepository,

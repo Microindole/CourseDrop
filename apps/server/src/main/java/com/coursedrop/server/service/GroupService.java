@@ -13,7 +13,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.coursedrop.server.common.ApiException;
 import com.coursedrop.server.config.StorageProperties;
 import com.coursedrop.server.dto.CreateGroupRequest;
+import com.coursedrop.server.dto.DeviceFingerprintResponse;
 import com.coursedrop.server.dto.GroupFileResponse;
+import com.coursedrop.server.dto.GroupKeyBackupRequest;
+import com.coursedrop.server.dto.GroupKeyBackupResponse;
 import com.coursedrop.server.dto.GroupMembershipResponse;
 import com.coursedrop.server.dto.GroupMemberResponse;
 import com.coursedrop.server.dto.GroupMessageRequest;
@@ -24,12 +27,14 @@ import com.coursedrop.server.enums.GroupMemberRole;
 import com.coursedrop.server.enums.GroupMemberStatus;
 import com.coursedrop.server.enums.GroupStatus;
 import com.coursedrop.server.group.GroupFileRecord;
+import com.coursedrop.server.group.GroupKeyBackupRecord;
 import com.coursedrop.server.group.GroupMemberRecord;
 import com.coursedrop.server.group.GroupMessageRecord;
 import com.coursedrop.server.group.GroupRealtimeEvent;
 import com.coursedrop.server.group.GroupRealtimeNotifier;
 import com.coursedrop.server.group.GroupRecord;
 import com.coursedrop.server.mapper.GroupFileRepository;
+import com.coursedrop.server.mapper.GroupKeyBackupRepository;
 import com.coursedrop.server.mapper.GroupMemberRepository;
 import com.coursedrop.server.mapper.GroupMessageRepository;
 import com.coursedrop.server.mapper.GroupRepository;
@@ -43,6 +48,7 @@ public class GroupService {
     private final GroupMemberRepository memberRepository;
     private final GroupMessageRepository messageRepository;
     private final GroupFileRepository fileRepository;
+    private final GroupKeyBackupRepository keyBackupRepository;
     private final IdentityRepository identityRepository;
     private final LocalFileStorageService storageService;
     private final StorageProperties storageProperties;
@@ -53,6 +59,7 @@ public class GroupService {
             GroupMemberRepository memberRepository,
             GroupMessageRepository messageRepository,
             GroupFileRepository fileRepository,
+            GroupKeyBackupRepository keyBackupRepository,
             IdentityRepository identityRepository,
             LocalFileStorageService storageService,
             StorageProperties storageProperties,
@@ -61,6 +68,7 @@ public class GroupService {
         this.memberRepository = memberRepository;
         this.messageRepository = messageRepository;
         this.fileRepository = fileRepository;
+        this.keyBackupRepository = keyBackupRepository;
         this.identityRepository = identityRepository;
         this.storageService = storageService;
         this.storageProperties = storageProperties;
@@ -123,6 +131,14 @@ public class GroupService {
     public void leave(String groupId, String fingerprintId) {
         requireActiveMember(groupId, fingerprintId);
         memberRepository.markLeft(groupId, fingerprintId, Instant.now());
+    }
+
+    public List<GroupMemberResponse> listMembers(String groupId, String fingerprintId) {
+        requireActiveMember(groupId, fingerprintId);
+        return memberRepository.findByGroupId(groupId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     public GroupMessageResponse sendMessage(String groupId, GroupMessageRequest request) {
@@ -207,6 +223,36 @@ public class GroupService {
                 new PathResource(storageService.resolve(file.storageKey())));
     }
 
+    public GroupKeyBackupResponse upsertKeyBackup(String groupId, String fingerprintId, GroupKeyBackupRequest request) {
+        requireActiveMember(groupId, fingerprintId);
+        var fingerprint = requireAccountBoundFingerprint(fingerprintId);
+        var now = Instant.now();
+        var existing = keyBackupRepository.findByAccountAndGroup(fingerprint.accountId(), groupId);
+        var backup = new GroupKeyBackupRecord(
+                existing.map(GroupKeyBackupRecord::id).orElseGet(() -> UUID.randomUUID().toString()),
+                fingerprint.accountId(),
+                fingerprintId,
+                groupId,
+                request.algorithm(),
+                request.kdfAlgorithm(),
+                blankToNull(request.kdfSalt()),
+                request.iv(),
+                request.authTag(),
+                request.encryptedPayload(),
+                existing.map(GroupKeyBackupRecord::createdAt).orElse(now),
+                now);
+        keyBackupRepository.upsert(backup);
+        return toResponse(backup);
+    }
+
+    public List<GroupKeyBackupResponse> listMyKeyBackups(String fingerprintId) {
+        var fingerprint = requireAccountBoundFingerprint(fingerprintId);
+        return keyBackupRepository.findByAccountId(fingerprint.accountId())
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     public void cleanupExpired(Instant now) {
         fileRepository.findExpired(now).forEach(file -> storageService.deleteIfExists(file.storageKey()));
         fileRepository.deleteExpired(now);
@@ -225,11 +271,23 @@ public class GroupService {
     }
 
     private void requireFingerprint(String fingerprintId) {
+        requireFingerprintRecord(fingerprintId);
+    }
+
+    private DeviceFingerprintResponse requireFingerprintRecord(String fingerprintId) {
         if (fingerprintId == null || fingerprintId.isBlank()) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Fingerprint is required");
         }
-        identityRepository.findFingerprintById(fingerprintId)
+        return identityRepository.findFingerprintById(fingerprintId)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Unknown fingerprint"));
+    }
+
+    private DeviceFingerprintResponse requireAccountBoundFingerprint(String fingerprintId) {
+        var fingerprint = requireFingerprintRecord(fingerprintId);
+        if (fingerprint.accountId() == null || fingerprint.accountId().isBlank()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Account-bound fingerprint required");
+        }
+        return fingerprint;
     }
 
     private void requireActiveMember(String groupId, String fingerprintId) {
@@ -326,5 +384,21 @@ public class GroupService {
                 file.plainSizeBytes(),
                 file.createdAt(),
                 file.expiresAt());
+    }
+
+    private GroupKeyBackupResponse toResponse(GroupKeyBackupRecord backup) {
+        return new GroupKeyBackupResponse(
+                backup.id(),
+                backup.accountId(),
+                backup.fingerprintId(),
+                backup.groupId(),
+                backup.algorithm(),
+                backup.kdfAlgorithm(),
+                backup.kdfSalt(),
+                backup.iv(),
+                backup.authTag(),
+                backup.encryptedPayload(),
+                backup.createdAt(),
+                backup.updatedAt());
     }
 }

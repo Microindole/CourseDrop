@@ -3,6 +3,8 @@ import { fileIo, fileUri } from '@kit.CoreFileKit';
 import {
   GroupCreateRequest,
   GroupCreateResponse,
+  GroupKeyBackupRequest,
+  GroupKeyBackupResponse,
   GroupMember,
   GroupMembershipResult,
   GroupMessage,
@@ -50,11 +52,14 @@ export interface GroupNetworkContract {
   getGroup(groupId: string): Promise<GroupCreateResponse>;
   listMyGroups(): Promise<GroupMembershipResult[]>;
   joinGroup(groupId: string, fingerprintId: string): Promise<GroupMember>;
+  listMembers(groupId: string): Promise<GroupMember[]>;
   leaveGroup(groupId: string, fingerprintId: string): Promise<void>;
   sendMessage(groupId: string, message: GroupMessage): Promise<GroupMessage>;
   syncMessages(groupId: string, cursor: string): Promise<GroupMessageSyncResult>;
   uploadFile(request: GroupFileUploadRequest): Promise<GroupFileUploadResponse>;
   downloadFile(request: GroupFileDownloadRequest): Promise<GroupFileDownloadResponse>;
+  upsertKeyBackup(groupId: string, request: GroupKeyBackupRequest): Promise<GroupKeyBackupResponse>;
+  listMyKeyBackups(): Promise<GroupKeyBackupResponse[]>;
 }
 
 export class PendingGroupNetworkContract implements GroupNetworkContract {
@@ -71,6 +76,10 @@ export class PendingGroupNetworkContract implements GroupNetworkContract {
   }
 
   async joinGroup(_groupId: string, _fingerprintId: string): Promise<GroupMember> {
+    throw new Error('群组服务端接口尚未接入');
+  }
+
+  async listMembers(_groupId: string): Promise<GroupMember[]> {
     throw new Error('群组服务端接口尚未接入');
   }
 
@@ -91,6 +100,14 @@ export class PendingGroupNetworkContract implements GroupNetworkContract {
   }
 
   async downloadFile(_request: GroupFileDownloadRequest): Promise<GroupFileDownloadResponse> {
+    throw new Error('群组服务端接口尚未接入');
+  }
+
+  async upsertKeyBackup(_groupId: string, _request: GroupKeyBackupRequest): Promise<GroupKeyBackupResponse> {
+    throw new Error('群组服务端接口尚未接入');
+  }
+
+  async listMyKeyBackups(): Promise<GroupKeyBackupResponse[]> {
     throw new Error('群组服务端接口尚未接入');
   }
 }
@@ -131,6 +148,18 @@ export class HttpGroupNetworkContract implements GroupNetworkContract {
       fingerprintId: fingerprintId
     }));
     return JSON.parse(responseText) as GroupMember;
+  }
+
+  async listMembers(groupId: string): Promise<GroupMember[]> {
+    const identity = identityService.getLocalIdentity();
+    if (identity === undefined || identity.fingerprintId.length === 0) {
+      throw new Error('请先注册本机身份');
+    }
+    const headers: FingerprintHeader = {
+      'X-CourseDrop-Fingerprint-Id': identity.fingerprintId
+    };
+    const responseText = await this.apiClient.get(`/api/groups/${groupId}/members`, headers);
+    return JSON.parse(responseText) as GroupMember[];
   }
 
   async leaveGroup(groupId: string, fingerprintId: string): Promise<void> {
@@ -241,6 +270,31 @@ export class HttpGroupNetworkContract implements GroupNetworkContract {
     }
   }
 
+  async upsertKeyBackup(groupId: string, request: GroupKeyBackupRequest): Promise<GroupKeyBackupResponse> {
+    const identity = identityService.getLocalIdentity();
+    if (identity === undefined || identity.fingerprintId.length === 0) {
+      throw new Error('请先注册本机身份');
+    }
+    const headers: JsonFingerprintHeader = {
+      'Content-Type': 'application/json',
+      'X-CourseDrop-Fingerprint-Id': identity.fingerprintId
+    };
+    const responseText = await this.apiClient.putJson(`/api/groups/${groupId}/key-backups/me`, JSON.stringify(request), headers);
+    return JSON.parse(responseText) as GroupKeyBackupResponse;
+  }
+
+  async listMyKeyBackups(): Promise<GroupKeyBackupResponse[]> {
+    const identity = identityService.getLocalIdentity();
+    if (identity === undefined || identity.fingerprintId.length === 0) {
+      throw new Error('请先注册本机身份');
+    }
+    const headers: FingerprintHeader = {
+      'X-CourseDrop-Fingerprint-Id': identity.fingerprintId
+    };
+    const responseText = await this.apiClient.get('/api/groups/key-backups/mine', headers);
+    return JSON.parse(responseText) as GroupKeyBackupResponse[];
+  }
+
   private buildMultipartBody(request: GroupFileUploadRequest, boundary: string): ArrayBuffer {
     const fileData = this.fileSystemService.readAll(request.localUri);
     const fields = this.buildFieldParts(request, boundary);
@@ -322,6 +376,11 @@ export class HttpGroupNetworkContract implements GroupNetworkContract {
 }
 
 interface FingerprintHeader {
+  'X-CourseDrop-Fingerprint-Id': string;
+}
+
+interface JsonFingerprintHeader {
+  'Content-Type': string;
   'X-CourseDrop-Fingerprint-Id': string;
 }
 

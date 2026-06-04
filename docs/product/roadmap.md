@@ -83,7 +83,7 @@ CourseDrop / 课递不是普通文件传输工具，也不是系统文件管理�
 
 ## 第 5 阶段：群组文件流
 
-状态：Java server MVP、服务端 WebSocket 实时通知基础、鸿蒙端群组 UI 与本地持久化已具备第一版。
+状态：Java server MVP、服务端 WebSocket 实时通知基础、账号级密文群 key 备份、鸿蒙端群组 UI 与本地持久化已具备第一版。
 
 目标：
 
@@ -96,15 +96,17 @@ CourseDrop / 课递不是普通文件传输工具，也不是系统文件管理�
 - 服务端群组、成员、密文消息、密文文件。
 - 服务端群组文件上传下载和权限校验。
 - 服务端 `/api/groups/mine` 可按设备身份列出已加入群组。
+- 服务端 `/api/groups/{groupId}/members` 可供群成员查看成员列表。
 - 服务端 `/ws/groups` 可向在线成员广播群组密文消息事件。
-- 鸿蒙端群组模型、AES-GCM 加密、HTTP contract、群组列表/会话 UI、本地 Preferences 持久化。
+- 服务端 `/api/groups/{groupId}/key-backups/me` 和 `/api/groups/key-backups/mine` 可保存和列出账号级密文群 key 备份。
+- 鸿蒙端群组模型、AES-GCM 加密、HTTP contract、WebSocket 实时事件订阅与退避重连、密钥备份 service、成员同步、群资料面板、群组列表/会话 UI、本地 Preferences 持久化。
 
 下一步：
 
-- 鸿蒙端接入 WebSocket 客户端，收到 `GROUP_MESSAGE_CREATED` 后刷新消息流。
+- 完善前后台生命周期，后台时降低实时连接活跃度，回到前台后补拉 cursor。
 - 将群组入口接入主流程，但不放到设置页，入口由产品侧单独决定。
-- 设计端到端加密群组 key 备份，解决卸载重装后的群组恢复问题。
-- 补群头像编辑和成员管理。
+- 将恢复口令 KDF 从 SHA256-PASSPHRASE-V1 升级到更强的 PBKDF2/Argon2 参数化方案。
+- 补远端群资料更新、成员移除、管理员角色等完整群管理能力。
 
 设计原则：
 

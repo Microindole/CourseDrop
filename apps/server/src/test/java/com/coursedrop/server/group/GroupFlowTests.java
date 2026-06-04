@@ -3,6 +3,7 @@ package com.coursedrop.server.group;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -64,6 +65,12 @@ class GroupFlowTests {
                         """.formatted(memberFingerprintId)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("\"role\":\"MEMBER\"")));
+
+        mockMvc.perform(get("/api/groups/{groupId}/members", groupId)
+                .header("X-CourseDrop-Fingerprint-Id", ownerFingerprintId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(ownerFingerprintId)))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(memberFingerprintId)));
 
         mockMvc.perform(post("/api/groups/{groupId}/messages", groupId)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -136,6 +143,70 @@ class GroupFlowTests {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void accountBoundMemberCanStoreOpaqueGroupKeyBackup() throws Exception {
+        var suffix = Long.toString(System.nanoTime());
+        var ownerFingerprintId = registerFingerprint("owner-backup-" + suffix, "Owner Phone");
+        var groupId = createGroup(ownerFingerprintId, suffix);
+
+        mockMvc.perform(put("/api/groups/{groupId}/key-backups/me", groupId)
+                .header("X-CourseDrop-Fingerprint-Id", ownerFingerprintId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "algorithm": "AES-256-GCM",
+                          "kdfAlgorithm": "PBKDF2-HMAC-SHA256",
+                          "kdfSalt": "salt-a",
+                          "iv": "backup-iv",
+                          "authTag": "backup-tag",
+                          "encryptedPayload": "backup-cipher"
+                        }
+                        """))
+                .andExpect(status().isForbidden());
+
+        var accountId = createAccount("backup-user-" + suffix, ownerFingerprintId);
+
+        mockMvc.perform(put("/api/groups/{groupId}/key-backups/me", groupId)
+                .header("X-CourseDrop-Fingerprint-Id", ownerFingerprintId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "algorithm": "AES-256-GCM",
+                          "kdfAlgorithm": "PBKDF2-HMAC-SHA256",
+                          "kdfSalt": "salt-a",
+                          "iv": "backup-iv",
+                          "authTag": "backup-tag",
+                          "encryptedPayload": "backup-cipher"
+                        }
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(accountId)))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("backup-cipher")));
+
+        mockMvc.perform(put("/api/groups/{groupId}/key-backups/me", groupId)
+                .header("X-CourseDrop-Fingerprint-Id", ownerFingerprintId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "algorithm": "AES-256-GCM",
+                          "kdfAlgorithm": "PBKDF2-HMAC-SHA256",
+                          "kdfSalt": "salt-b",
+                          "iv": "backup-iv-2",
+                          "authTag": "backup-tag-2",
+                          "encryptedPayload": "backup-cipher-2"
+                        }
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("backup-cipher-2")));
+
+        mockMvc.perform(get("/api/groups/key-backups/mine")
+                .header("X-CourseDrop-Fingerprint-Id", ownerFingerprintId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(groupId)))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("backup-cipher-2")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("backup-cipher\\\""))));
+    }
+
     private String registerFingerprint(String fingerprint, String deviceName) throws Exception {
         var result = mockMvc.perform(post("/api/identity/fingerprints")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -146,6 +217,22 @@ class GroupFlowTests {
                           "platform": "HarmonyOS"
                         }
                         """.formatted(fingerprint, deviceName)))
+                .andExpect(status().isOk())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+    }
+
+    private String createAccount(String username, String fingerprintId) throws Exception {
+        var result = mockMvc.perform(post("/api/accounts")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "username": "%s",
+                          "password": "password-%s",
+                          "fingerprintId": "%s",
+                          "passwordLoginEnabled": true
+                        }
+                        """.formatted(username, username, fingerprintId)))
                 .andExpect(status().isOk())
                 .andReturn();
         return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();

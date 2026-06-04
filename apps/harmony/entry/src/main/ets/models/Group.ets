@@ -116,3 +116,27 @@ export interface GroupMembershipResult {
   group: GroupCreateResponse;
   member: GroupMember;
 }
+
+export interface GroupKeyBackupRequest {
+  algorithm: string;
+  kdfAlgorithm: string;
+  kdfSalt?: string;
+  iv: string;
+  authTag: string;
+  encryptedPayload: string;
+}
+
+export interface GroupKeyBackupResponse {
+  id: string;
+  accountId: string;
+  fingerprintId: string;
+  groupId: string;
+  algorithm: string;
+  kdfAlgorithm: string;
+  kdfSalt?: string;
+  iv: string;
+  authTag: string;
+  encryptedPayload: string;
+  createdAt: string;
+  updatedAt: string;
+}

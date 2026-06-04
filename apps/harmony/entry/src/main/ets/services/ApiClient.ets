@@ -43,6 +43,14 @@ export class ApiClient {
     return this.request(path, http.RequestMethod.POST, body, requestHeaders);
   }
 
+  async putJson(path: string, body: string, headers?: Object): Promise<string> {
+    let requestHeaders: Object = new JsonRequestHeader();
+    if (headers !== undefined) {
+      requestHeaders = headers;
+    }
+    return this.request(path, http.RequestMethod.PUT, body, requestHeaders);
+  }
+
   async delete(path: string, headers?: Object): Promise<string> {
     return this.request(path, http.RequestMethod.DELETE, '', headers);
   }

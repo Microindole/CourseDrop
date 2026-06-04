@@ -42,6 +42,14 @@ GET /ws/groups?fingerprintId={fingerprintId}
 
 ## 服务端发送
 
+## 相关 REST 补拉接口
+
+WebSocket 只负责提示有变化，客户端仍通过 REST 获取可靠状态：
+
+- `GET /api/groups/{groupId}/messages?after={cursor}`：补拉群组密文消息。
+- `GET /api/groups/{groupId}/members`：补拉群成员状态。
+- `GET /api/groups/key-backups/mine`：登录账号后列出可恢复的密文群 key 备份。
+
 ### GROUP_MESSAGE_CREATED
 
 群组内出现新的密文消息。
@@ -63,9 +71,9 @@ GET /ws/groups?fingerprintId={fingerprintId}
 }
 ```
 
-客户端处理策略：
+鸿蒙端当前处理策略：
 
-- 如果本地持有该群组 key，则保存密文消息并刷新 UI。
+- 如果本地持有该群组 key，则触发该群 REST cursor 同步并刷新 UI。
 - 如果事件丢失或客户端离线，则下次进入会话时通过 REST cursor 补拉。
 - WebSocket 事件不包含明文内容、群组 key 或 file key。
 

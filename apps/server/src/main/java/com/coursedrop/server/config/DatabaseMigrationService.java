@@ -26,6 +26,7 @@ public class DatabaseMigrationService {
         run(2, "add security and encryption metadata", this::addSecurityColumns);
         run(3, "add explicit share download policy", this::addDownloadPolicy);
         run(4, "create group transfer schema", this::createGroupSchema);
+        run(5, "create group key backup schema", this::createGroupKeyBackupSchema);
     }
 
     private void run(int version, String description, Runnable migration) {
@@ -243,6 +244,36 @@ public class DatabaseMigrationService {
         jdbcTemplate.execute("""
                 create index if not exists idx_group_files_group_created
                 on group_files(group_id, created_at)
+                """);
+    }
+
+    private void createGroupKeyBackupSchema() {
+        jdbcTemplate.execute("""
+                create table if not exists group_key_backups (
+                  id text primary key,
+                  account_id text not null,
+                  fingerprint_id text not null,
+                  group_id text not null,
+                  algorithm text not null,
+                  kdf_algorithm text not null,
+                  kdf_salt text,
+                  iv text not null,
+                  auth_tag text not null,
+                  encrypted_payload text not null,
+                  created_at text not null,
+                  updated_at text not null,
+                  foreign key(account_id) references accounts(id),
+                  foreign key(fingerprint_id) references device_fingerprints(id),
+                  foreign key(group_id) references group_sessions(id)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create unique index if not exists idx_group_key_backups_account_group
+                on group_key_backups(account_id, group_id)
+                """);
+        jdbcTemplate.execute("""
+                create index if not exists idx_group_key_backups_fingerprint
+                on group_key_backups(fingerprint_id)
                 """);
     }
 

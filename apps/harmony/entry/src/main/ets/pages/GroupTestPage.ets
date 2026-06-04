@@ -4,13 +4,15 @@ import {
   CdGroupListView,
   CdScrollContainer
 } from '../components/index';
-import { GroupMessage, GroupSession } from '../models/Group';
+import { GroupMember, GroupMessage, GroupSession } from '../models/Group';
+import { groupRealtimeService, GroupRealtimeEvent } from '../services/group';
 import { GroupMessagePreview, GroupTestViewModel } from '../viewmodels/GroupTestViewModel';
 
 @Entry
 @Component
 struct GroupTestPage {
   private viewModel: GroupTestViewModel = new GroupTestViewModel();
+  private unsubscribeRealtime: () => void = () => {};
 
   @State groupName: string = this.viewModel.groupName;
   @State messageText: string = this.viewModel.messageText;
@@ -21,20 +23,34 @@ struct GroupTestPage {
   @State groupTitle: string = '';
   @State groupAvatarText: string = '群';
   @State groupAvatarColor: string = '#1466FF';
+  @State avatarEditText: string = '群';
+  @State avatarEditColor: string = '#1466FF';
+  @State recoveryPassphrase: string = '';
   @State busy: boolean = false;
   @State groups: GroupSession[] = [];
+  @State members: GroupMember[] = [];
   @State messages: GroupMessage[] = [];
   @State messagePreviews: GroupMessagePreview[] = [];
   @State pageMode: string = 'list';
   @State showCreatePanel: boolean = false;
   @State showJoinPanel: boolean = false;
+  @State showRestorePanel: boolean = false;
   @State showNotice: boolean = false;
   @State showInvitePanel: boolean = false;
+  @State showDetailPanel: boolean = false;
 
   aboutToAppear() {
     this.viewModel.initializeFromLocalState();
     this.syncState();
     this.refreshPreviews();
+    groupRealtimeService.connect();
+    this.unsubscribeRealtime = groupRealtimeService.subscribe((event: GroupRealtimeEvent) => {
+      this.handleRealtimeEvent(event);
+    });
+  }
+
+  aboutToDisappear() {
+    this.unsubscribeRealtime();
   }
 
   private syncState(): void {
@@ -45,7 +61,10 @@ struct GroupTestPage {
     this.groupTitle = group === undefined ? '' : group.plainName;
     this.groupAvatarText = group === undefined || group.config.avatarText === undefined ? '群' : group.config.avatarText;
     this.groupAvatarColor = group === undefined || group.config.avatarColor === undefined ? '#1466FF' : group.config.avatarColor;
+    this.avatarEditText = this.groupAvatarText;
+    this.avatarEditColor = this.groupAvatarColor;
     this.groups = this.viewModel.groups;
+    this.members = this.viewModel.members;
     this.messages = this.viewModel.messages;
     this.inviteText = this.viewModel.inviteText;
     this.messageText = this.viewModel.messageText;
@@ -83,12 +102,37 @@ struct GroupTestPage {
       });
   }
 
+  private handleRealtimeEvent(event: GroupRealtimeEvent): void {
+    this.viewModel.handleRealtimeMessage(event.groupId)
+      .then(() => {
+        this.syncState();
+        return this.viewModel.describeMessagePreviews();
+      })
+      .then((previews: GroupMessagePreview[]) => {
+        this.messagePreviews = previews;
+      })
+      .catch((error: Error) => {
+        console.error(`[CourseDrop] group realtime sync failed: ${String(error)}`);
+      });
+  }
+
   private selectGroup(groupId: string): void {
     try {
       this.viewModel.selectGroup(groupId);
       this.syncState();
       this.refreshPreviews();
       this.pageMode = 'chat';
+      this.viewModel.syncMessages()
+        .then(() => {
+          this.syncState();
+          return this.viewModel.describeMessagePreviews();
+        })
+        .then((previews: GroupMessagePreview[]) => {
+          this.messagePreviews = previews;
+        })
+        .catch((error: Error) => {
+          console.error(`[CourseDrop] group enter sync failed: ${String(error)}`);
+        });
     } catch (error) {
       this.errorMessage = String(error);
       this.actionText = '切换群组失败';
@@ -107,8 +151,10 @@ struct GroupTestPage {
         errorMessage: this.errorMessage,
         groupName: $groupName,
         inviteText: $inviteText,
+        recoveryPassphrase: $recoveryPassphrase,
         showCreatePanel: $showCreatePanel,
         showJoinPanel: $showJoinPanel,
+        showRestorePanel: $showRestorePanel,
         onBack: () => {
           router.back();
         },
@@ -119,6 +165,7 @@ struct GroupTestPage {
           this.runTask(async () => {
             this.viewModel.groupName = this.groupName;
             await this.viewModel.registerIdentity();
+            groupRealtimeService.connect();
             await this.viewModel.createGroup();
             this.pageMode = 'chat';
             this.showCreatePanel = false;
@@ -127,9 +174,18 @@ struct GroupTestPage {
         onJoinGroup: () => {
           this.runTask(async () => {
             await this.viewModel.registerIdentity();
+            groupRealtimeService.connect();
             await this.viewModel.joinGroupFromInvite(this.inviteText);
             this.pageMode = 'chat';
             this.showJoinPanel = false;
+          });
+        },
+        onRestoreBackup: () => {
+          this.runTask(async () => {
+            await this.viewModel.registerIdentity();
+            await this.viewModel.restoreFirstGroupBackup(this.recoveryPassphrase);
+            this.pageMode = 'chat';
+            this.showRestorePanel = false;
           });
         }
       })
@@ -143,19 +199,25 @@ struct GroupTestPage {
       avatarText: this.groupAvatarText,
       avatarColor: this.groupAvatarColor,
       messageCount: this.messages.length,
+      members: this.members,
       previews: this.messagePreviews,
       busy: this.busy,
       inviteText: this.inviteText,
       showNotice: this.showNotice,
       errorMessage: this.errorMessage,
       messageText: $messageText,
+      avatarEditText: $avatarEditText,
+      avatarEditColor: $avatarEditColor,
+      recoveryPassphrase: $recoveryPassphrase,
       showInvitePanel: $showInvitePanel,
+      showDetailPanel: $showDetailPanel,
       onBack: () => {
         this.pageMode = 'list';
       },
       onSync: () => {
         this.runTask(async () => {
           await this.viewModel.syncMessages();
+          await this.viewModel.syncMembers();
         });
       },
       onInvite: () => {
@@ -167,6 +229,29 @@ struct GroupTestPage {
       onCopyInvite: () => {
         this.runTask(async () => {
           await this.viewModel.copyCurrentInvite();
+        });
+      },
+      onSaveProfile: () => {
+        this.runTask(async () => {
+          this.viewModel.updateGroupProfile(this.avatarEditText, this.avatarEditColor);
+        });
+      },
+      onBackupKey: () => {
+        this.runTask(async () => {
+          await this.viewModel.backupCurrentGroup(this.recoveryPassphrase);
+        });
+      },
+      onRestoreBackup: () => {
+        this.runTask(async () => {
+          await this.viewModel.restoreFirstGroupBackup(this.recoveryPassphrase);
+          this.pageMode = 'chat';
+        });
+      },
+      onLeaveGroup: () => {
+        this.runTask(async () => {
+          await this.viewModel.leaveCurrentGroup();
+          this.pageMode = this.viewModel.currentGroup === undefined ? 'list' : 'chat';
+          this.showDetailPanel = false;
         });
       },
       onSendFile: () => {

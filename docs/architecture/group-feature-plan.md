@@ -16,6 +16,7 @@ graph TD
         GS[GroupService<br/>群组生命周期]
         GMS[GroupMessageService<br/>消息与传输同步]
         GCS[GroupCryptoService<br/>E2EE密钥与加解密]
+        GKBS[GroupKeyBackupService<br/>账号级密文密钥备份]
     end
     DS --> CONTRACT[3. 网络与契约层 REST & WebSocket]
     DS --> REPO[4. 本地持久化层 RDB Repositories]
@@ -52,7 +53,7 @@ graph TD
 - 用户可以配置自己的源服务器，群组、消息、文件都在该源服务器上中转。
 - 服务端负责成员关系、密文消息、密文文件、过期清理和实时通知。
 - 服务端不能保存群组 key、file key、明文文件名、明文消息或明文群名。
-- 邀请链接或密钥备份负责把群组 key 安全交给成员设备。
+- 邀请链接或账号级密文密钥备份负责把群组 key 安全交给成员设备。
 - 没有群组 key 的设备，即使是服务器管理员，也只能看到密文和元数据。
 
 这意味着“完全公网”和“数据自己可控”并不冲突：公网只是网络可达性，数据主权来自用户可自建源服务器，内容安全来自端到端加密。
@@ -66,6 +67,17 @@ graph TD
 - 离线恢复：始终依赖 REST cursor，不依赖 WebSocket 保证消息不丢。
 
 当前服务端已提供 `/ws/groups?fingerprintId=...` 作为群组实时事件通道的基础入口。
+
+### 1.3.3 群组 key 备份与重装恢复
+
+群组 key 备份是账号级能力，不是服务器托管明文密钥。
+
+- 上传备份前，鸿蒙端使用用户侧恢复密钥或密码派生密钥对群组 key 备份载荷进行 AES-GCM 加密。
+- 服务端只保存 `algorithm`、`kdfAlgorithm`、`kdfSalt`、`iv`、`authTag`、`encryptedPayload` 等密文容器字段。
+- 上传备份要求当前 fingerprint 已绑定账号且仍是群成员。
+- 列出备份按账号维度返回，便于卸载重装后新 fingerprint 登录同账号后恢复旧群组。
+- 恢复后客户端再根据备份中的 `groupId` 加入群组并通过 REST cursor 补拉密文消息。
+- 当前鸿蒙端恢复口令使用 `SHA256-PASSPHRASE-V1` 派生 AES-256 key，后续应替换为参数化 KDF。
 
 ### 1.4 本地持久化层 (Database & Repository Layer)
 - **职责**：本地数据库的读写代理。
